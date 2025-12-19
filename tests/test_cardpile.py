@@ -6,7 +6,7 @@ from cards import ActionCard, ObjectiveCard, GlitchCard
 
 class TestCardPile:
     
-    def test_init_creates_empty_pile(self):
+    def test_inxit_creates_empty_pile(self):
         pile = CardPile('action')
         assert pile.type == 'action'
         assert pile.is_empty()
