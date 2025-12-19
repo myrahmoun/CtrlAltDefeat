@@ -41,7 +41,7 @@ class Board():
         return None
     
 
-    def display_operation(self, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
+    def display_cards(self, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
         """Puts the 5 cards (1 objective + 4 actions) into the board's display slots."""
         self.card_slots[0] = objective
         for i, action in enumerate(actions[:4]):  # Max 4 actions
