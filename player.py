@@ -1,5 +1,6 @@
 '''
 Player Parameters:
+    - id: unique integer corresponding to player
     - name: the name of the player
     - role: 
         - "adversary"
@@ -12,13 +13,16 @@ Player Parameters:
         - "finished"
 '''
 
+import cards
+
 class Player:
     def __init__(self, name, role):
+        self.id = id
         self.name = name
         self.role = role
         self.hand = cards.Hand()
         self.boardPosition = 0
         self.playerStatus = "waiting"
 
-        def __repr__(self):
+        def __repr__(self)->str:
             return f"Player(name={self.name}, role={self.role}, hand={self.hand}, boardPosition={self.boardPosition}, status={self.status})"
