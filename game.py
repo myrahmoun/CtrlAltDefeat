@@ -3,7 +3,8 @@
 from typing import List, Optional
 from board import Board
 from cardpile import CardPile
-from cards import Player, Hand
+from player import Player
+from cards import Hand
 from Operation import Operation
 from Die import Die
 
