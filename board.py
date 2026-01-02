@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 from cards import ActionCard, ObjectiveCard
 
-class Board():
+class Board:
     '''
     Represents the 20-space game board.
     Tracks player positions and displays the current operation's cards.
