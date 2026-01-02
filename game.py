@@ -1,5 +1,6 @@
 # game.py
 
+from typing import List, Optional
 from board import Board
 from cardpile import CardPile
 from cards import Player, Hand
@@ -8,7 +9,7 @@ from Die import Die
 
 
 class Game:
-    def __init__(self, game_id):
+    def __init__(self, game_id)-> None:
         self.game_id = game_id
         self.board = Board()
         self.players = []  # List of Player objects
@@ -20,13 +21,14 @@ class Game:
         self.status = 'waiting'  # waiting, playing, finished
         self.winner = None
     
-    def add_player(self, player_id, name):
+    def add_player(self, player, name):
         """Add player to game"""
+        self.players.append(player)
         
     def start_game(self):
         """Initialize: load cards, deal hands, set turn order"""
-        
-    def process_turn(self, player_id, selected_cards):
+     
+    def process_turn(self, player, selected_cards):
         """Execute full turn: validate → create operation → evaluate → move player"""
         
     def next_turn(self):
