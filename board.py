@@ -6,8 +6,6 @@ class Board:
     Represents the 20-space game board.
     Tracks player positions and displays the current operation's cards.
     '''
-
-
     def __init__(self):
         # 20 positions, each holds list of player_ids at that spot
         self.positions: List[List[str]] = [[] for _ in range(20)]
