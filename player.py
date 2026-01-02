@@ -16,13 +16,20 @@ Player Parameters:
 import cards
 
 class Player:
+    _next_id = 1  # class-level counter
+
     def __init__(self, name, role):
-        self.id = id
+        self.id = Player._next_id
+        Player._next_id += 1
+
         self.name = name
         self.role = role
         self.hand = cards.Hand()
         self.boardPosition = 0
         self.playerStatus = "waiting"
 
-        def __repr__(self)->str:
-            return f"Player(name={self.name}, role={self.role}, hand={self.hand}, boardPosition={self.boardPosition}, status={self.status})"
+    def __repr__(self)->str:
+            return (
+                f"Player(id={self.id}, name={self.name}, role={self.role}, "
+                f"boardPosition={self.boardPosition}, status={self.playerStatus})"
+                )
