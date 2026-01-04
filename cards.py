@@ -55,11 +55,11 @@ class ObjectiveCard:
     - Eligible piles: objective_pile
     - There must be 2 objective cards in a player's hand by the end of each turn.
     '''
-    def __init__(self, name, description, respScore, effectScore):
+    def __init__(self, name, description, responsibility, effect):
         self.name = name
         self.description = description
-        self.respScore = respScore
-        self.effectScore = effectScore
+        self.respScore = responsibility
+        self.effectScore = effect
         self.cardStatus = "in_objective_pile"
 
         numOfObjectiveCards += 1
