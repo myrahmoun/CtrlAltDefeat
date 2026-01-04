@@ -1,14 +1,23 @@
 # game.py
 
+# Library imports
 from typing import List, Optional
+from pathlib import Path
+import json
+
+# Local imports
 from board import Board
 from cardpile import CardPile
 from player import Player
-from cards import Hand
+from cards import Hand, ActionCard, ObjectiveCard
 from Operation import Operation
 from Die import Die
 from turn_manager import TurnManager
 
+
+# Game files
+ACTION_CARDS_FILE = "action_cards.json"
+OBJECTIVE_CARDS_FILE = "objective_cards.json"
 
 class Game:
     def __init__(self, game_id: str)-> None:
@@ -49,21 +58,26 @@ class Game:
         """
         Initialize game:
         - Load cards from JSON into piles
+        - Shuffle piles
         - Deal initial hands (2 obj + 4 actions)
-        - Roll die for turn order
+        - Initialize turn order (delegate to turn_manager)
         - Set status to 'playing'
-        - Tell turn_manager to start
         """
 
     def end_game(self, winner: Player) -> None:
         """Mark game as finished, set winner"""
+        self.status = 'finished'
+        self.winner = winner
+        winner.playerStatus = 'finished'
         
     # === State Queries ===
     def is_full(self) -> bool:
         """Check if game has 6 players (max)"""
+        return len(self.players) >= 6
     
     def can_start(self) -> bool:
         """Check if game has 3-6 players and status is 'lobby'"""
+        return 3 <= len(self.players) <= 6 and self.status == 'waiting'
 
     def get_game_state(self) -> dict:
         """
@@ -75,8 +89,52 @@ class Game:
         """
 
     # === Card Management (called by TurnManager) ===
-    def refill_deck_if_empty(self, pile: CardPile) -> None:
-        """If pile empty, shuffle discard back in"""
-    
     def load_cards_from_json(self) -> None:
         """Read card definitions and populate piles"""
+        
+        # Load action cards
+        action_path = Path(ACTION_CARDS_FILE)
+        if not action_path.exists():
+            raise FileNotFoundError(f"Action cards file not found: {ACTION_CARDS_FILE}")
+        
+        with open(action_path, 'r') as f:
+            action_data = json.load(f)
+            if 'cards' not in action_data:
+                raise ValueError(f"Invalid format in {ACTION_CARDS_FILE}: missing 'cards' key")
+            
+            action_cards = []
+            for card_dict in action_data['cards']:
+                card = ActionCard(
+                    name=card_dict['name'],
+                    description=card_dict['description'],
+                    category=card_dict['category'],
+                    responsibility=card_dict['responsibility'],
+                    effect=card_dict['effect']
+                )
+                action_cards.append(card)
+            self.action_pile.load_cards(action_cards)
+        
+        # Load objective cards  
+        objective_path = Path(OBJECTIVE_CARDS_FILE)
+        if not objective_path.exists():
+            raise FileNotFoundError(f"Objective cards file not found: {OBJECTIVE_CARDS_FILE}")
+        
+        with open(objective_path, 'r') as f:
+            objective_data = json.load(f)
+            if 'cards' not in objective_data:
+                raise ValueError(f"Invalid format in {OBJECTIVE_CARDS_FILE}: missing 'cards' key")
+            
+            objective_cards = []
+            for card_dict in objective_data['cards']:
+                card = ObjectiveCard(
+                    name=card_dict['name'],
+                    description=card_dict['description'],
+                    responsibility=card_dict['responsibility'],
+                    effect=card_dict['effect']
+                )
+                objective_cards.append(card)
+            self.objective_pile.load_cards(objective_cards)
+
+
+    def refill_deck_if_empty(self, pile: CardPile) -> None:
+        """If pile empty, shuffle discard back in"""
