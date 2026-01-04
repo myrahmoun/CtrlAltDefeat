@@ -63,6 +63,36 @@ class Game:
         - Initialize turn order (delegate to turn_manager)
         - Set status to 'playing'
         """
+        if not self.can_start():
+            raise ValueError(f"Cannot start game: need 3-6 players, have {len(self.players)}")
+        
+        # Load and shuffle cards
+        self.load_cards_from_json()
+        self.action_pile.shuffle()
+        self.objective_pile.shuffle()
+
+        # Deal initial hands to each player
+        for player in self.players:
+            # Deal 2 objectives
+            for i in range(2):
+                card = self.objective_pile.draw()
+                if card is None:
+                    raise RuntimeError("Ran out of objective cards during initial deal")
+                player.hand.objective_cards.append(card)
+            
+            # Deal 4 actions
+            for j in range(4):
+                card = self.action_pile.draw()
+                if card is None:
+                    raise RuntimeError("Ran out of action cards during initial deal")
+                player.hand.action_cards.append(card)
+
+        # Initialize turn order
+        self.turn_manager.initialize_turn_order()
+
+        # Set status
+        self.status = 'playing'
+
 
     def end_game(self, winner: Player) -> None:
         """Mark game as finished, set winner"""
@@ -138,3 +168,9 @@ class Game:
 
     def refill_deck_if_empty(self, pile: CardPile) -> None:
         """If pile empty, shuffle discard back in"""
+        if pile.is_empty():
+            # Swap the discard pile's content into the empty pile
+            pile.content = self.discard_pile.content
+            self.discard_pile.content = []
+            # Shuffle the refilled pile
+            pile.shuffle()
