@@ -1,5 +1,6 @@
 from typing import List, Optional
 from cards import ActionCard, ObjectiveCard, GlitchCard
+import random
 
 class CardPile():
     '''
@@ -52,6 +53,11 @@ class CardPile():
         self.content = cards
         for card in cards:
             card.cardStatus = f"in_{self.type}_pile"
+
+
+    def shuffle(self) -> None:
+        """Shuffle the cards in the pile."""
+        random.shuffle(self.content)
 
     def __repr__(self):
         return f"CardPile(type={self.type}, size={self.size()})"
