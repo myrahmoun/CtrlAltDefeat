@@ -109,7 +109,7 @@ class Game:
         """Check if game has 3-6 players and status is 'lobby'"""
         return 3 <= len(self.players) <= 6 and self.status == 'waiting'
 
-    def get_game_state(self) -> dict:
+    def get_game_state(self) -> dict: # NOTE: AI GENERATED FOR NOW, NOT SURE WHAT gRPC EXPECTS
         """
         Serialize current state for gRPC responses:
         - game_id, status, winner
@@ -117,6 +117,33 @@ class Game:
         - all player info (but only visible hand for requesting player)
         - current turn info
         """
+        return {
+            'game_id': self.game_id,
+            'status': self.status,
+            'winner': self.winner.id if self.winner else None,
+            'current_turn_player_id': self.turn_manager.get_current_player().id if self.status == 'playing' else None,
+            'players': [
+                {
+                    'id': player.id,
+                    'name': player.name,
+                    'role': player.role,
+                    'position': player.boardPosition,
+                    'status': player.playerStatus,
+                    'hand_size': {
+                        'objectives': len(player.hand.objective_cards),
+                        'actions': len(player.hand.action_cards)
+                    }
+                }
+                for player in self.players
+            ],
+            'board_positions': [
+                {
+                    'position': i,
+                    'player_ids': [p for p in self.board.positions[i]]
+                }
+                for i in range(20)
+            ]
+        }
 
     # === Card Management (called by TurnManager) ===
     def load_cards_from_json(self) -> None:
