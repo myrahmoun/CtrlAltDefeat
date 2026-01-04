@@ -169,6 +169,9 @@ class Game:
     def refill_deck_if_empty(self, pile: CardPile) -> None:
         """If pile empty, shuffle discard back in"""
         if pile.is_empty():
+            if self.discard_pile.is_empty():
+                raise RuntimeError("Cannot refill deck: both deck and discard pile are empty")
+        
             # Swap the discard pile's content into the empty pile
             pile.content = self.discard_pile.content
             self.discard_pile.content = []
