@@ -93,7 +93,7 @@ class Operation(object):
             self.govern is None or
             self.intell is None or
             self.tech is None or
-            self.opjective is None):
+            self.objective is None):
             raise InvalidOperationException
 
         die_roll = Die.roll()
