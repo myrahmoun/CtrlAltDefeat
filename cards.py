@@ -33,12 +33,12 @@ class ActionCard:
     - There can be a maximum of 4 action cards in a player's hand.
     '''
 
-    def __init__(self, name, description, category, respScore, effectScore):
+    def __init__(self, name, description, category, responsibility, effect):
         self.name = name
         self.description = description
         self.category = category
-        self.respScore = respScore
-        self.effectScore = effectScore
+        self.responsibility = responsibility
+        self.effect = effect
         self.cardStatus = "in_action_pile"
 
 
