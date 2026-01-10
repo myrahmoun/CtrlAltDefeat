@@ -10,8 +10,8 @@ from board import Board
 from cardpile import CardPile
 from player import Player
 from cards import Hand, ActionCard, ObjectiveCard
-from Operation import Operation
-from Die import Die
+from operation import Operation
+from die import Die
 from turn_manager import TurnManager
 
 

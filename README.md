@@ -55,8 +55,8 @@ Total all card responsibility scores (including objective):
 ├── board.py             # Circular board (20 positions)
 ├── cards.py             # Card definitions (Action, Objective, Glitch)
 ├── cardpile.py          # Deck management
-├── Operation.py         # Operation evaluation and scoring
-└── Die.py               # Dice rolling
+├── operation.py         # Operation evaluation and scoring
+└── die.py               # Dice rolling
 ```
 
 ## Tech Stack
