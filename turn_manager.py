@@ -18,34 +18,8 @@ class TurnManager:
             game: Reference to parent Game object
         """
         self.game = game
-        self.turn_order: List[int] = []  # Ordered list of player_ids
-        self.current_turn_index: int = 0
         self.turn_history: List[dict] = []  # Optional: log of past turns
-    
-    # === Turn Sequences ==
 
-    def initialize_turn_order(self) -> None:
-        """
-        Initlize order of player turns
-        """
-        if not self.game.players:
-            raise ValueError("Cannot initialize turn order: no players in game")
-    
-
-    def get_current_player(self) -> Player:
-        """Return player whose turn it is"""
-        pass
-
-    def next_turn(self):
-        """
-        Advance to next player in turn_order.
-        Wraps around (after last player → first player).
-        Returns new current player.
-        """
-        pass
-
-    # === Turn Execution ===
-    
     def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard], die_roll: Optional[int] = None) -> dict:
         """
         Execute a complete turn for a player.
