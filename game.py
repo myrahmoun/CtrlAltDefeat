@@ -28,7 +28,7 @@ class Game:
         # Game objects
         self.game_id = game_id
         self.board = Board()
-        self.players = []  # List of Player objects
+        self.players: List[Player] = []  # List of Player objects
         self.action_pile = CardPile('action')
         self.objective_pile = CardPile('objective')
         self.discard_pile = CardPile('discard')
@@ -39,7 +39,13 @@ class Game:
 
         # Initate turn manager
         self.turn_manager = TurnManager(self)
-    
+
+        # Initialize turn order
+        self.turn_order: List[Player] = []
+        self.current_turn_index: int = 0
+
+
+    # === Manage Players ===
     def add_player(self, player_id)-> None:
         """Add player to game"""
         self.players.append(player_id)
@@ -48,10 +54,46 @@ class Game:
         """Remove player (disconnect handling)"""
         self.players.remove(player_id)
 
-    def get_player(self, player_id) -> Optional[Player]:
-        """Lookup player by ID"""
-        if player_id in self.players:
-            return player_id # MUST RETURN PLAYER OBJECT? OR JUST ID? LATTER IS CIRCULAR
+    def get_player_by_id(self, player_id: int) -> Optional[Player]:
+        """Lookup player by ID and return player object. Might be useful later for gRPC?"""
+        for player in self.players:
+            if player.id == player_id:
+                return player
+        return None
+        
+    # === Manage Turn Sequence ===
+    def initialize_turn_order(self):
+        """Roll die for each player, sort by roll, populate turn_order"""
+        # Check that there some players have joined the game
+        if not self.players:
+            raise ValueError("Cannot initialize turn order: no players in game")
+        
+        # Keep rolling until all players have unique rolls
+        rolls = {}
+
+        # Keep rolling for each player until they get a unique value
+        for player in self.players:
+            while True:
+                roll = self.die.roll()
+                if roll not in rolls.values():
+                    rolls[player] = roll
+                    print(f"{player.name} rolled {roll}")
+                    break
+                else:
+                    print(f"{player.name} rolled {roll} (tie, re-rolling)")
+            
+        # Sort players by roll (highest first)
+        self.turn_order = sorted(rolls.keys(), key=lambda player: rolls[player], reverse=True)
+        self.current_turn_index = 0
+    
+    def get_current_player(self) -> Player:
+        """Return current player"""
+        return self.turn_order[self.current_turn_index]
+    
+    def next_turn(self) -> Player:
+        """Advance to next player"""
+        self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
+        return self.get_current_player()
 
     # === Game Lifecycle ===
     def start_game(self):
@@ -88,7 +130,7 @@ class Game:
                 player.hand.action_cards.append(card)
 
         # Initialize turn order
-        self.turn_manager.initialize_turn_order()
+        self.initialize_turn_order()
 
         # Set status
         self.status = 'playing'
@@ -109,43 +151,7 @@ class Game:
         """Check if game has 3-6 players and status is 'lobby'"""
         return 3 <= len(self.players) <= 6 and self.status == 'waiting'
 
-    def get_game_state(self) -> dict: # NOTE: AI GENERATED FOR NOW, NOT SURE WHAT gRPC EXPECTS
-        """
-        Serialize current state for gRPC responses:
-        - game_id, status, winner
-        - board positions
-        - all player info (but only visible hand for requesting player)
-        - current turn info
-        """
-        return {
-            'game_id': self.game_id,
-            'status': self.status,
-            'winner': self.winner.id if self.winner else None,
-            'current_turn_player_id': self.turn_manager.get_current_player().id if self.status == 'playing' else None,
-            'players': [
-                {
-                    'id': player.id,
-                    'name': player.name,
-                    'role': player.role,
-                    'position': player.boardPosition,
-                    'status': player.playerStatus,
-                    'hand_size': {
-                        'objectives': len(player.hand.objective_cards),
-                        'actions': len(player.hand.action_cards)
-                    }
-                }
-                for player in self.players
-            ],
-            'board_positions': [
-                {
-                    'position': i,
-                    'player_ids': [p for p in self.board.positions[i]]
-                }
-                for i in range(20)
-            ]
-        }
-
-    # === Card Management (called by TurnManager) ===
+    # === Card Management ===
     def load_cards_from_json(self) -> None:
         """Read card definitions and populate piles"""
         
