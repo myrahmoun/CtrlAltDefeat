@@ -25,7 +25,8 @@ class Player:
         self.name = name
         self.role = role
         self.hand = cards.Hand()
-        self.boardPosition = 0
+        self.boardPosition = 0 # number between 0 and 19
+        self.lose_next_turn = False  # Flag for skip turn penalty
         self.playerStatus = "waiting"
 
     def __repr__(self)->str:
