@@ -3,7 +3,7 @@
 from typing import List, Dict, Tuple, Optional
 from player import Player
 from cards import ObjectiveCard, ActionCard, GlitchCard
-from Operation import Operation, LoseTurnException, InvalidOperationException
+from operation import Operation, LoseTurnException, InvalidOperationException
 
 
 class TurnManager:
