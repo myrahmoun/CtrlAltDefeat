@@ -47,4 +47,4 @@ class TurnManager:
         })
         
         # Move to next turn
-        self.next_turn()
+        self.game.next_turn()
