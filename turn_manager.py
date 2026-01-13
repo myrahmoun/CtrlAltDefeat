@@ -150,4 +150,6 @@ class TurnManager:
         self.game.next_turn()
 
 
-    # MUST IMPLEMENT WAY FOR PLAYER TO CHOOSE TO SKIP TURN
+    def pass_turn(self, player: Player) -> None:
+        """Player voluntarily passes their turn."""
+        self.skip_turn(player, reason="passed")
