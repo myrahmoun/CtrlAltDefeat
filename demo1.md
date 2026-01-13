@@ -1,6 +1,7 @@
 # Design choices for simplification
 
 - Ignoring Glitch cards initially
+- Always draw up to 4 action cards to replace played ones (up to 6 in hand) after played turn. Later must change the design to give the player the chance to choose how many cards to draw.
 - Assuming following structure for json files storing cards:
 Action cards:
 
