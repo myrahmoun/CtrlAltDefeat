@@ -9,8 +9,7 @@ import json
 from board import Board
 from cardpile import CardPile
 from player import Player
-from cards import Hand, ActionCard, ObjectiveCard
-from operation import Operation
+from cards import ActionCard, ObjectiveCard
 from die import Die
 from turn_manager import TurnManager
 
