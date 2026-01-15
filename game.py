@@ -15,8 +15,8 @@ from turn_manager import TurnManager
 
 
 # Game files
-ACTION_CARDS_FILE = "action_cards.json"
-OBJECTIVE_CARDS_FILE = "objective_cards.json"
+ACTION_CARDS_FILE = "data/action_cards.json"
+OBJECTIVE_CARDS_FILE = "data/objective_cards.json"
 
 class Game:
     def __init__(self, game_id: str)-> None:
