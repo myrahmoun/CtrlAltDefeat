@@ -49,14 +49,20 @@ Total all card responsibility scores (including objective):
 ## Project Structure
 
 ```
+├── scripts/
+│   ├── main.py
+│   └── mock_cards_generator.py
+├── data/
+│   ├── action_cards.json
+│   └── objective_cards.json
 ├── game.py              # Main game controller
 ├── turn_manager.py      # Turn sequencing and execution
 ├── player.py            # Player state
 ├── board.py             # Circular board (20 positions)
 ├── cards.py             # Card definitions (Action, Objective, Glitch)
 ├── cardpile.py          # Deck management
-├── operation.py         # Operation evaluation and scoring
-└── die.py               # Dice rolling
+├── Operation.py         # Operation evaluation and scoring
+└── Die.py               # Dice rolling
 ```
 
 ## Tech Stack
