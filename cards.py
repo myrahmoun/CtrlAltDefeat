@@ -58,8 +58,8 @@ class ObjectiveCard:
     def __init__(self, name, description, responsibility, effect):
         self.name = name
         self.description = description
-        self.respScore = responsibility
-        self.effectScore = effect
+        self.responsibility = responsibility
+        self.effect = effect
         self.cardStatus = "in_objective_pile"
 
         numOfObjectiveCards += 1
