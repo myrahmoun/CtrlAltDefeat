@@ -98,7 +98,7 @@ class TurnManager:
 
         # Return objective card to the bottom of the objective deck
         player.hand.objective_cards.remove(objective)
-        self.game.objective_pile.content.append(objective)  # IS THIS FIFO? IS THIS WHAT WE WANT HERE?
+        self.game.objective_pile.content.append(objective)
         
         # Draw replacement cards
         # Objective
