@@ -107,9 +107,8 @@ class TurnManager:
             raise RuntimeError("Cannot draw objective card")
         player.hand.objective_cards.append(new_obj)
 
-        # Action - temporarily simplified for demo purposes
-        actions_to_draw = min(4, 6 - len(player.hand.action_cards))
-        for _ in range(actions_to_draw):
+        # Action - TODO: ADD OPTION TO DRAW FROM TOP OF DISCARD PILE
+        for _ in range(2):
             self.game.refill_deck_if_empty(self.game.action_pile)
             card = self.game.action_pile.draw()
             if not card:
@@ -153,3 +152,4 @@ class TurnManager:
     def pass_turn(self, player: Player) -> None:
         """Player voluntarily passes their turn."""
         self.skip_turn(player, reason="passed")
+        # TODO: UPDATE STATUS OR SOMETHING TO IMPACT TURN EXEC
