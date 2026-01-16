@@ -20,7 +20,7 @@ Parameters:
         - Draw 2 action cards
         - Skip turn
         - Discard "n" "category" action cards
-        - etc. we can extend this! 
+        - etc. we can extend this! `
 '''
 
 actionCards, objectiveCards, glitchCards = [], [], []
@@ -94,9 +94,6 @@ class Hand:
     def __init__(self):
         self.action_cards = []
         self.objective_cards = []
-
-        for i in range(4): self.action_cards.append(ActionCard())
-        for i in range(2): self.objective_cards.append(ObjectiveCard())
 
     def __repr__(self):
         return f"Hand(action_cards={self.action_cards}, objective_cards={self.objective_cards})"
