@@ -41,8 +41,7 @@ class ActionCard:
         self.effect = effect
         self.cardStatus = "in_action_pile"
 
-
-        numOfActionCards += 1
+        # numOfActionCards += 1
         actionCards.append(self)
 
     def __repr__(self):
@@ -62,7 +61,7 @@ class ObjectiveCard:
         self.effect = effect
         self.cardStatus = "in_objective_pile"
 
-        numOfObjectiveCards += 1
+        # numOfObjectiveCards += 1
         objectiveCards.append(self)
 
     def __repr__(self):
@@ -80,7 +79,7 @@ class GlitchCard:
         self.glitchType = glitchType
         self.cardStatus = "in_action_pile"
 
-        numOfGlitchCards += 1
+        # numOfGlitchCards += 1
         glitchCards.append(self)
 
     def __repr__(self):

@@ -10,6 +10,7 @@ from board import Board
 from cardpile import CardPile
 from player import Player
 from cards import ActionCard, ObjectiveCard
+from cards import numOfActionCards, numOfGlitchCards, numOfGlitchCards
 from die import Die
 from turn_manager import TurnManager
 
@@ -45,9 +46,9 @@ class Game:
 
 
     # === Manage Players ===
-    def add_player(self, player_id)-> None:
+    def add_player(self, player: Player)-> None:
         """Add player to game"""
-        self.players.append(player_id)
+        self.players.append(player)
         
     def remove_player(self, player_id) -> None:
         """Remove player (disconnect handling)"""
@@ -61,7 +62,7 @@ class Game:
         return None
         
     # === Manage Turn Sequence ===
-    def initialize_turn_order(self):
+    def _initialize_turn_order(self):
         """Roll die for each player, sort by roll, populate turn_order"""
         # Check that there some players have joined the game
         if not self.players:
@@ -108,7 +109,7 @@ class Game:
             raise ValueError(f"Cannot start game: need 3-6 players, have {len(self.players)}")
         
         # Load and shuffle cards
-        self.load_cards_from_json()
+        self._load_cards_from_json()
         self.action_pile.shuffle()
         self.objective_pile.shuffle()
 
@@ -129,7 +130,7 @@ class Game:
                 player.hand.action_cards.append(card)
 
         # Initialize turn order
-        self.initialize_turn_order()
+        self._initialize_turn_order()
 
         # Set status
         self.status = 'playing'
@@ -151,7 +152,7 @@ class Game:
         return 3 <= len(self.players) <= 6 and self.status == 'waiting'
 
     # === Card Management ===
-    def load_cards_from_json(self) -> None:
+    def _load_cards_from_json(self) -> None:
         """Read card definitions and populate piles"""
         
         # Load action cards

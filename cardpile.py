@@ -8,7 +8,6 @@ class CardPile():
     Can draw, add, shuffle, and check if empty.
     '''
 
-
     def __init__(self, pile_type: str):
         """
         pile_type: 'action', 'objective', or 'discard'
