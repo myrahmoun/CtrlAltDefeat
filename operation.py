@@ -6,7 +6,7 @@ Created on 12/12/25
 @author waldo
 
 """
-import cards, Die
+import cards, die
 
 class LoseTurnException(Exception):
     def __init__(self):
@@ -26,9 +26,9 @@ class Operation(object):
         self.responsibility = 0
         self.effect = 0
 
-    def add_action(self, action):
+    def add_action(self, action:cards.ActionCard) -> cards.ActionCard | None:
         '''
-        Add an ActionCard to the operation. First determine the category of the card,
+        Add an ActionCard to the Operation. First determine the category of the card,
         and then add to that category. If there is already a card of that category, return
         that card; otherwise return None.
         '''
@@ -63,7 +63,7 @@ class Operation(object):
 
     def remove_action(self, action):
         '''
-        Remove an ActionCard from the operation based on its category.
+        Remove an ActionCard from the Operation based on its category.
         Return the removed card, or None if there was no card of that category.
         '''
         return_v = None
@@ -87,7 +87,7 @@ class Operation(object):
 
     def evaluate_op(self):
         '''
-        Evaluate the operation by returning the number of spaces to move the player, if any.
+        Evaluate the Operation by returning the number of spaces to move the player, if any.
         '''
         if (self.cyber is None or
             self.govern is None or

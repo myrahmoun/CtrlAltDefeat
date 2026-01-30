@@ -4,13 +4,13 @@ from cards import ActionCard, ObjectiveCard
 class Board:
     '''
     Represents the 20-space game board.
-    Tracks player positions and displays the current operation's cards.
+    Tracks player positions and displays the current Operation's cards.
     '''
     def __init__(self):
         # 20 positions, each holds list of player_ids at that spot
         self.positions: List[List[str]] = [[] for _ in range(20)]
 
-        # 5 card slots for displaying current operation (1 objective + 4 actions)
+        # 5 card slots for displaying current Operation (1 objective + 4 actions)
         self.card_slots: List[Optional[ActionCard | ObjectiveCard]] = [None] * 5
 
 
