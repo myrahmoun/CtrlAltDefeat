@@ -33,26 +33,25 @@ class Operation(object):
         that card; otherwise return None.
         '''
         return_v = None
-        match action.category:
-            case 'Intelligence':
-                if self.intell is not None:
-                    retun_v = self.intell
-                self.intell = action
-            case 'Technology':
-                if self.tech is not None:
-                    return_v = self.tech
-                self.tech = action
-            case 'Governance':
-                if self.govern is not None:
-                    return_v = self.govern
-                self.govern = action
-            case 'Cybersecurity':
-                if self.cyber is not None:
-                    return_v = self.cyber
-                self.cyber = action
-            case _:
-                # unknown category: do nothing (could raise)
-                pass
+        if  action.category == 'Intelligence':
+            if self.intell is not None:
+                return_v = self.intell
+            self.intell = action
+        elif action.category == 'Technology':
+            if self.tech is not None:
+                return_v = self.tech
+            self.tech = action
+        elif action.category == 'Governance':
+            if self.govern is not None:
+                return_v = self.govern
+            self.govern = action
+        elif action.category == 'Cybersecurity':
+            if self.cyber is not None:
+                return_v = self.cyber
+            self.cyber = action
+        else:
+            # unknown category: do nothing (could raise)
+            pass
         self.responsibility += action.responsibility
         self.effect += action.effect
         if return_v is not None:
@@ -67,22 +66,21 @@ class Operation(object):
         Return the removed card, or None if there was no card of that category.
         '''
         return_v = None
-        match action.category:
-            case 'Intelligence':
-                return_v = self.intell
-                self.intell = None
-            case 'Technology':
-                return_v = self.tech
-                self.tech = None
-            case 'Governance':
-                return_v = self.govern
-                self.govern = None
-            case 'Cybersecurity':
-                return_v = self.cyber
-                self.cyber = None
-            case _:
-                # unknown category: do nothing (could raise)
-                pass
+        if action.category == 'Intelligence':
+            return_v = self.intell
+            self.intell = None
+        elif action.category == 'Technology':
+            return_v = self.tech
+            self.tech = None
+        elif action.category == 'Governance':
+            return_v = self.govern
+            self.govern = None
+        elif action.category == 'Cybersecurity':
+            return_v = self.cyber
+            self.cyber = None
+        else:
+            # unknown category: do nothing (could raise)
+            pass
         return return_v
 
     def evaluate_op(self):
@@ -96,7 +94,7 @@ class Operation(object):
             self.objective is None):
             raise InvalidOperationException
 
-        die_roll = Die.roll()
+        die_roll = die.Die.roll()
         if self.responsibility > 3:
             return_val = self.effect
         elif self.responsibility > 0:
