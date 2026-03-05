@@ -8,7 +8,7 @@ import random
 
 # Local imports
 from board import Board
-from cardpile import CardPile
+from cardpile import CardPile, CardPileTypes
 from player import Player
 from cards import ActionCard, ObjectiveCard
 from cards import numOfActionCards, numOfGlitchCards, numOfGlitchCards
@@ -37,9 +37,9 @@ class Game:
         self.game_id = game_id
         self.board = Board()
         self.players: List[Player] = []  # List of Player objects
-        self.action_pile = CardPile('action')
-        self.objective_pile = CardPile('objective')
-        self.discard_pile = CardPile('discard')
+        self.action_pile = CardPile(CardPileTypes.ACTION)
+        self.objective_pile = CardPile(CardPileTypes.OBJECTIVE)
+        self.discard_pile = CardPile(CardPileTypes.DISCARD)
         self.die = Die(6)
         self.current_turn = 0
         self.winner = None

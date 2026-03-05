@@ -1,6 +1,12 @@
 from typing import List, Optional
 from cards import ActionCard, ObjectiveCard, GlitchCard
+from enum import Enum
 import random
+
+class CardPileTypes(Enum):
+    ACTION = 1
+    OBJECTIVE = 2
+    DISCARD = 3
 
 class CardPile():
     '''
@@ -8,11 +14,11 @@ class CardPile():
     Can draw, add, shuffle, and check if empty.
     '''
 
-    def __init__(self, pile_type: str):
+    def __init__(self, pile_type: CardPileTypes):
         """
-        pile_type: 'action', 'objective', or 'discard'
+        pile_type: 'ACTION', 'OBJECTIVE', or 'DISCARD'
         """
-        self.type = pile_type
+        self.type = CardPileTypes(pile_type)
         self.content: List = []
 
 
