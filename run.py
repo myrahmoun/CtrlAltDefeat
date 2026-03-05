@@ -7,21 +7,17 @@ Created: 01/30/2026
 Description: The main script to actually run our game in terminal
 '''
 
-
 import board, cardpile, cards, die, game, operation, player, turn_manager
-
 from datetime import datetime
 
 # Initialize all game components 
 
 def start_game():
     print("Loading...")
+    
     date = str(datetime.now())
     official_game = game.Game(date)
     gameboard = board.Board()
-    discard_pile = cardpile.CardPile("discard")
-    action_cards_pile = cardpile.CardPile("action")
-    objective_cards_pile = cardpile.CardPile("objective")
     rolling_die = die.Die(6)
     turn_operator = turn_manager.TurnManager(gameboard)
 
