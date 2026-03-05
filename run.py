@@ -19,7 +19,6 @@ def start_game():
     official_game = game.Game(date)
     gameboard = board.Board()
     rolling_die = die.Die(6)
-    turn_operator = turn_manager.TurnManager(gameboard)
 
     print("All game components created!")
     input("Prese enter to get the game started: ")
