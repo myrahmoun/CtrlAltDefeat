@@ -49,42 +49,12 @@ class TurnManager:
         # Display cards on board
         self.game.board.display_cards(objective, actions)
 
-        # Build an operation
-        operation = Operation(objective)
-        for action in actions:
-            operation.add_action(action)
-        
-        try:
-            # Evaluate operation. Might raise LoseTurnException
-            spaces_to_move = operation.evaluate_op()
-            success = True
+        # Build and evaluate operation
+        return_values = self._execute_operation(player, objective, actions)
+        success = return_values['success']
+        bonus_applied = return_values['bonus_applied']
+        spaces_to_move = return_values['spaces_to_move']
 
-            # Move Player
-            old_pos = player.boardPosition
-            new_pos = min(old_pos + spaces_to_move , 19) # Cap position at 19
-            player.boardPosition = new_pos
-
-            # Bonus (if applicable): extra space + draw two action cards
-            bonus_applied = False
-            if operation.responsibility >= 4:
-                # Move an extra space
-                new_pos = min(new_pos + 1, 19)
-                player.boardPosition = new_pos
-                bonus_applied = True
-
-                # Draw 2 extra cards
-                for _ in range(2):
-                    self.game.refill_deck_if_empty(self.game.action_pile)
-                    card = self.game.action_pile.draw()
-                    if card and len(player.hand.action_cards) < 6:  # Respect 6 card limit
-                        player.hand.action_cards.append(card)
-                    else:
-                        raise RuntimeError("Adding bonus card failed")
-
-        except LoseTurnException:
-            player.lose_next_turn = True # Set flag for next turn
-            success = False
-            spaces_to_move = 0        
 
         # Check if current_player won
         if player.boardPosition >= 19:
@@ -133,6 +103,48 @@ class TurnManager:
         self.game.next_turn()
 
         # Can return a dict of results here (later for gRPC)
+
+    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard])->Dict:
+        """Build an operation and evaluate it. Return (was operation successful, is a bonus applicable)"""
+
+        operation = Operation(objective)
+        for action in actions:
+            operation.add_action(action)
+        
+        try:
+            # Evaluate operation. Might raise LoseTurnException
+            spaces_to_move = operation.evaluate_op()
+            success = True
+
+            # Move Player
+            old_pos = player.boardPosition
+            new_pos = min(old_pos + spaces_to_move , 19) # Cap position at 19
+            player.boardPosition = new_pos
+
+            # Bonus (if applicable): extra space + draw two action cards
+            bonus_applied = False
+            if operation.responsibility >= 4:
+                # Move an extra space
+                new_pos = min(new_pos + 1, 19)
+                player.boardPosition = new_pos
+                bonus_applied = True
+
+                # Draw 2 extra cards
+                for _ in range(2):
+                    self.game.refill_deck_if_empty(self.game.action_pile)
+                    card = self.game.action_pile.draw()
+                    if card and len(player.hand.action_cards) < 6:  # Respect 6 card limit
+                        player.hand.action_cards.append(card)
+                    else:
+                        raise RuntimeError("Adding bonus card failed")
+
+        except LoseTurnException:
+            player.lose_next_turn = True # Set flag for next turn
+            success = False
+            bonus_applied = False
+            spaces_to_move = 0  
+
+        return {'success': success, 'bonus_applied': bonus_applied, 'spaces_to_move': spaces_to_move}
 
     def skip_turn(self, player: Player, reason: str = "timeout") -> None:
         """
