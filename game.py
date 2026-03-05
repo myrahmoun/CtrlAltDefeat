@@ -29,7 +29,8 @@ class Game:
     def __init__(self, game_id: str)-> None:
         # Identifiers
         self.game_id: str
-        self.status: Enum
+        # Set game status to lobby
+        self.status = GameStats.LOBBY
 
         # Game objects
         self.game_id = game_id
@@ -112,9 +113,7 @@ class Game:
         """
         if not self.can_start():
             raise ValueError(f"Cannot start game: need 3-6 players, have {len(self.players)}")
-        
-        # Set game status to lobby
-        self.status = GameStats.LOBBY
+    
         
         # Load and shuffle cards
         self._load_cards_from_json()
