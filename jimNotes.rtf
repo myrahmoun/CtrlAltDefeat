@@ -1,0 +1,34 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2868
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Notes on the game, 2/18/26\
+\
+Game object:\
+\
+Do we want to check that the game is in the lobby when adding a player? Or do we want to allow players to be added in mid-game? What about removing a player? Can that happen at any time?\
+\
+Hard-coding the paths for the card store is fine for now, but this should be moved to a configuration file. We should think of what else we want in the configuration file.\
+\
+In the game object, why have the players rolling the dice to establish the order? Instead, we could just take the list of players and do a random.shuffle to insure a random ordering. That could be part of the initialization of the game.\
+\
+When getting the next player, do we want to take into account that the player may have lost a turn? If so, next_turn should see who goes next, check to see if the lose_next_turn flag is set, and if so clear the flag and then look at the next player (who might also have the lose_next_turn flag set)\'85\
+\
+In load_cards_from_json, it might make sense to check that all of the files exist before opening and reading any of the files\'97 building the decks might take some time, and it would be a waste to build most of the decks just to find that one of the later ones was not there/misconfigured.\
+\
+How does the game start? Start_game figures out the order of the players and deals out the initial cards, but then what? \
+\
+Board class:\
+\
+Rather than having the board take care of keeping track of the cards in the current operation, why not have a reference to an operation object? That object does the checking for the kinds of cards, and can be used to keep track of the cards as well\'85\
+\
+I think the get_visual_board method confuses the backing store for the game (what we have been constructing) with the user interface. We need to be able to build the user interface from the backing store, but they need not be mirrors of each other. This would be a good issue to talk about.\
+\
+Cards\
+In general, I dislike the use of strings as a way of distinguishing things. It might make sense to introduce some enums for the cards and card piles, especially when we are distinguishing between cards of the same type. I also think that would help for things like cardStatus.\
+\
+\
+}
