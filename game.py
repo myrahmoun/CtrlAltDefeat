@@ -78,7 +78,8 @@ class Game:
         if not self.players:
             raise ValueError("Cannot initialize turn order: no players in game")
 
-        self.turn_order = random.shuffle(self.players)
+        self.turn_order = self.players 
+        random.shuffle(self.turn_order)
         self.current_turn_index = 0
 
         return self.turn_order

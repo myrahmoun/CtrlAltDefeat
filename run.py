@@ -19,6 +19,7 @@ def start_game():
     official_game = game.Game(date)
     gameboard = board.Board()
     rolling_die = die.Die(6)
+    # TODO: initialize the turn_manager here and pass in the game instance 
 
     print("All game components created!")
     input("Prese enter to get the game started: ")
@@ -34,6 +35,10 @@ def start_game():
     official_game.start_game()
 
     print("Great! Let the game begin:) ")
+
+
+    # TODO: Where does turn manager get defined? 
+
 
 
 if __name__ == "__main__":
