@@ -13,17 +13,23 @@ from cards import ActionCard, ObjectiveCard
 from cards import numOfActionCards, numOfGlitchCards, numOfGlitchCards
 from die import Die
 from turn_manager import TurnManager
+from enum import Enum
 
 
 # Game files
 ACTION_CARDS_FILE = "data/action_cards.json"
 OBJECTIVE_CARDS_FILE = "data/objective_cards.json"
 
+class GameStats(Enum):
+    LOBBY = 1
+    PlAYING = 2
+    FINISHED = 3
+
 class Game:
     def __init__(self, game_id: str)-> None:
         # Identifiers
         self.game_id: str
-        self.status: str  # 'lobby', 'playing', 'finished'
+        self.status: Enum
 
         # Game objects
         self.game_id = game_id
@@ -34,7 +40,6 @@ class Game:
         self.discard_pile = CardPile('discard')
         self.die = Die(6)
         self.current_turn = 0
-        self.status = 'waiting'  # waiting, playing, finished
         self.winner = None
 
         # Initate turn manager
@@ -108,6 +113,9 @@ class Game:
         if not self.can_start():
             raise ValueError(f"Cannot start game: need 3-6 players, have {len(self.players)}")
         
+        # Set game status to lobby
+        self.status = GameStats.LOBBY
+        
         # Load and shuffle cards
         self._load_cards_from_json()
         self.action_pile.shuffle()
@@ -116,14 +124,14 @@ class Game:
         # Deal initial hands to each player
         for player in self.players:
             # Deal 2 objectives
-            for i in range(2):
+            for _ in range(2):
                 card = self.objective_pile.draw()
                 if card is None:
                     raise RuntimeError("Ran out of objective cards during initial deal")
                 player.hand.objective_cards.append(card)
             
             # Deal 4 actions
-            for j in range(4):
+            for _ in range(4):
                 card = self.action_pile.draw()
                 if card is None:
                     raise RuntimeError("Ran out of action cards during initial deal")
@@ -133,13 +141,14 @@ class Game:
         self._initialize_turn_order()
 
         # Set status
-        self.status = 'playing'
+        self.status = GameStats.PlAYING
 
 
     def end_game(self, winner: Player) -> None:
         """Mark game as finished, set winner"""
-        self.status = 'finished'
+        self.status = GameStats.FINISHED
         self.winner = winner
+        # TODO: REPAIR - TURN INTO ENUM
         winner.playerStatus = 'finished'
         
     # === State Queries ===
@@ -149,7 +158,7 @@ class Game:
     
     def can_start(self) -> bool:
         """Check if game has 3-6 players and status is 'lobby'"""
-        return 3 <= len(self.players) <= 6 and self.status == 'waiting'
+        return 3 <= len(self.players) <= 6 and self.status == GameStats.LOBBY
 
     # === Card Management ===
     def _load_cards_from_json(self) -> None:
