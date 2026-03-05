@@ -55,7 +55,10 @@ class Game:
     # === Manage Players ===
     def add_player(self, player: Player)-> None:
         """Add player to game"""
-        self.players.append(player)
+        if self.status == GameStats.LOBBY:
+            self.players.append(player)
+        else:
+            raise ValueError("Game not in Lobby mode. Cannot add player")
         
     def remove_player(self, player_id) -> None:
         """Remove player (disconnect handling)"""
