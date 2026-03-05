@@ -34,6 +34,7 @@ class TurnManager:
             dict with turn results including success, spaces_moved, etc.
         """
         # Check if player has lost rights to this turn
+        
         if player.lose_next_turn:
             player.lose_next_turn = False
             self.skip_turn(player, reason = "lost_previous_turn")
