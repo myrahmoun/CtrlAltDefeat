@@ -51,11 +51,7 @@ class TurnManager:
         self.game.board.display_cards(objective, actions)
 
         # Build and evaluate operation
-        return_values = self._execute_operation(player, objective, actions)
-        success = return_values['success']
-        bonus_applied = return_values['bonus_applied']
-        spaces_to_move = return_values['spaces_to_move']
-
+        success, bonus_applied, spaces_to_move  = self._execute_operation(player, objective, actions)
 
         # Check if current_player won
         if player.boardPosition >= 19:
@@ -105,7 +101,7 @@ class TurnManager:
 
         # Can return a dict of results here (later for gRPC)
 
-    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard])->Dict:
+    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard])->tuple:
         """Build an operation and evaluate it. Return (was operation successful, is a bonus applicable)"""
 
         operation = Operation(objective)
@@ -145,7 +141,7 @@ class TurnManager:
             bonus_applied = False
             spaces_to_move = 0  
 
-        return {'success': success, 'bonus_applied': bonus_applied, 'spaces_to_move': spaces_to_move}
+        return success, bonus_applied, spaces_to_move
 
     def skip_turn(self, player: Player, reason: str = "timeout") -> None:
         """
