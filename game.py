@@ -4,6 +4,7 @@
 from typing import List, Optional
 from pathlib import Path
 import json
+import random
 
 # Local imports
 from board import Board
@@ -69,28 +70,15 @@ class Game:
         
     # === Manage Turn Sequence ===
     def _initialize_turn_order(self):
-        """Roll die for each player, sort by roll, populate turn_order"""
+        """Randomly assign a turn order for the game """
         # Check that there some players have joined the game
         if not self.players:
             raise ValueError("Cannot initialize turn order: no players in game")
-        
-        # Keep rolling until all players have unique rolls
-        rolls = {}
 
-        # Keep rolling for each player until they get a unique value
-        for player in self.players:
-            while True:
-                roll = self.die.roll()
-                if roll not in rolls.values():
-                    rolls[player] = roll
-                    print(f"{player.name} rolled {roll}")
-                    break
-                else:
-                    print(f"{player.name} rolled {roll} (tie, re-rolling)")
-            
-        # Sort players by roll (highest first)
-        self.turn_order = sorted(rolls.keys(), key=lambda player: rolls[player], reverse=True)
+        self.turn_order = random.shuffle(self.players)
         self.current_turn_index = 0
+
+        return self.turn_order
     
     def get_current_player(self) -> Player:
         """Return current player"""
@@ -114,7 +102,6 @@ class Game:
         if not self.can_start():
             raise ValueError(f"Cannot start game: need 3-6 players, have {len(self.players)}")
     
-        
         # Load and shuffle cards
         self._load_cards_from_json()
         self.action_pile.shuffle()
