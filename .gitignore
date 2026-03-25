@@ -1,0 +1,5 @@
+/.venv
+conftest.py
+/data
+/tests
+/scripts

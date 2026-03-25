@@ -3,7 +3,7 @@
 from typing import List, Dict, Tuple, Optional
 from player import Player
 from cards import ObjectiveCard, ActionCard, GlitchCard
-from Operation import Operation, LoseTurnException, InvalidOperationException
+from operation import Operation, LoseTurnException, InvalidOperationException
 
 
 class TurnManager:
@@ -18,35 +18,9 @@ class TurnManager:
             game: Reference to parent Game object
         """
         self.game = game
-        self.turn_order: List[int] = []  # Ordered list of player_ids
-        self.current_turn_index: int = 0
         self.turn_history: List[dict] = []  # Optional: log of past turns
-    
-    # === Turn Sequences ==
 
-    def initialize_turn_order(self) -> None:
-        """
-        Initlize order of player turns
-        """
-        if not self.game.players:
-            raise ValueError("Cannot initialize turn order: no players in game")
-    
-
-    def get_current_player(self) -> Player:
-        """Return player whose turn it is"""
-        pass
-
-    def next_turn(self):
-        """
-        Advance to next player in turn_order.
-        Wraps around (after last player → first player).
-        Returns new current player.
-        """
-        pass
-
-    # === Turn Execution ===
-    
-    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard], die_roll: Optional[int] = None) -> dict:
+    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
         """
         Execute a complete turn for a player.
         
@@ -59,7 +33,115 @@ class TurnManager:
         Returns:
             dict with turn results including success, spaces_moved, etc.
         """
-        pass
+        # Check if player has lost rights to this turn
+        
+        if player.lose_next_turn:
+            player.lose_next_turn = False
+            self.skip_turn(player, reason = "lost_previous_turn")
+            return
+
+        # Check that we have four action cards and an objective card
+        if len(actions) != 4:
+            raise ValueError(f"Need exactly 4 action cards, got {len(actions)}")
+        if not objective:
+            raise ValueError("Need one objective card, got none")
+    
+
+        # Display cards on board
+        self.game.board.display_cards(objective, actions)
+
+        # Build and evaluate operation
+        success, bonus_applied, spaces_to_move  = self._execute_operation(player, objective, actions)
+
+        # Check if current_player won
+        if player.boardPosition >= 19:
+            self.game.end_game(player)
+            return
+
+        # Discard action cards
+        for card in actions:
+            self.game.discard_pile.add(card)
+            player.hand.action_cards.remove(card)
+
+        # Return objective card to the bottom of the objective deck
+        player.hand.objective_cards.remove(objective)
+        self.game.objective_pile.content.append(objective)
+        
+        # Draw replacement cards
+        # Objective
+        new_obj = self.game.objective_pile.draw()
+        if not new_obj:
+            raise RuntimeError("Cannot draw objective card")
+        player.hand.objective_cards.append(new_obj)
+
+        # Action - TODO: ADD OPTION TO DRAW FROM TOP OF DISCARD PILE
+        for _ in range(2):
+            self.game.refill_deck_if_empty(self.game.action_pile)
+            card = self.game.action_pile.draw()
+            if not card:
+                raise RuntimeError("Cannot draw action card")
+            player.hand.action_cards.append(card)
+
+
+        # Clear board (UI)
+        self.game.board.clear_card_slots()
+
+        # Log turn
+        self.turn_history.append({
+            'event': 'turn_executed',
+            'player_id': player.id,
+            'player_name': player.name,
+            'success': success,
+            'spaces_moved': spaces_to_move,
+            'final_position': player.boardPosition
+        })
+
+        # Move to next turn
+        self.game.next_turn()
+
+        # Can return a dict of results here (later for gRPC)
+
+    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard])->tuple:
+        """Build an operation and evaluate it. Return (was operation successful, is a bonus applicable)"""
+
+        operation = Operation(objective)
+        for action in actions:
+            operation.add_action(action)
+        
+        try:
+            # Evaluate operation. Might raise LoseTurnException
+            spaces_to_move = operation.evaluate_op()
+            success = True
+
+            # Move Player
+            old_pos = player.boardPosition
+            new_pos = min(old_pos + spaces_to_move , 19) # Cap position at 19
+            player.boardPosition = new_pos
+
+            # Bonus (if applicable): extra space + draw two action cards
+            bonus_applied = False
+            if operation.responsibility >= 4:
+                # Move an extra space
+                new_pos = min(new_pos + 1, 19)
+                player.boardPosition = new_pos
+                bonus_applied = True
+
+                # Draw 2 extra cards
+                for _ in range(2):
+                    self.game.refill_deck_if_empty(self.game.action_pile)
+                    card = self.game.action_pile.draw()
+                    if card and len(player.hand.action_cards) < 6:  # Respect 6 card limit
+                        player.hand.action_cards.append(card)
+                    else:
+                        raise RuntimeError("Adding bonus card failed")
+
+        except LoseTurnException:
+            player.lose_next_turn = True # Set flag for next turn
+            success = False
+            bonus_applied = False
+            spaces_to_move = 0  
+
+        return success, bonus_applied, spaces_to_move
 
     def skip_turn(self, player: Player, reason: str = "timeout") -> None:
         """
@@ -73,4 +155,10 @@ class TurnManager:
         })
         
         # Move to next turn
-        self.next_turn()
+        self.game.next_turn()
+
+
+    def pass_turn(self, player: Player) -> None:
+        """Player voluntarily passes their turn."""
+        self.skip_turn(player, reason="passed")
+        # TODO: UPDATE STATUS OR SOMETHING TO IMPACT TURN EXEC

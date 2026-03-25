@@ -1,5 +1,5 @@
 from typing import List, Optional
-from cards import ActionCard, ObjectiveCard, GlitchCard, CardStatus
+from cards import ActionCard, ObjectiveCard, GlitchCard
 from enum import Enum
 import random
 
@@ -14,14 +14,11 @@ class CardPile():
     Can draw, add, shuffle, and check if empty.
     '''
 
-    def __init__(self, pile_type):
+    def __init__(self, pile_type: CardPileTypes):
         """
-        pile_type: CardPileTypes.ACTION, CardPileTypes.OBJECTIVE, or CardPileTypes.DISCARD (or their string equivalents)
+        pile_type: 'ACTION', 'OBJECTIVE', or 'DISCARD'
         """
-        if isinstance(pile_type, str):
-            self.type = CardPileTypes[pile_type.upper()]
-        else:
-            self.type = pile_type
+        self.type = CardPileTypes(pile_type)
         self.content: List = []
 
 
@@ -34,15 +31,10 @@ class CardPile():
         Add a card to the pile
         """
         self.content.append(card)
-        if self.type == CardPileTypes.ACTION:
-            card.cardStatus = CardStatus.IN_ACTIONPILE
-        elif self.type == CardPileTypes.OBJECTIVE:
-            card.cardStatus = CardStatus.IN_OBJECTIVE_PILE
-        elif self.type == CardPileTypes.DISCARD:
-            card.cardStatus = CardStatus.IN_DISCARD_PILE
+        card.cardStatus = f"in_{self.type}_pile"
 
 
-    def draw(self):
+    def draw(self) -> Optional[ActionCard | ObjectiveCard | GlitchCard]:
         """
         Remove and return the top card.
         Returns None if pile is empty.
@@ -65,12 +57,7 @@ class CardPile():
         """
         self.content = cards
         for card in cards:
-            if self.type == CardPileTypes.ACTION:
-                card.cardStatus = CardStatus.IN_ACTIONPILE
-            elif self.type == CardPileTypes.OBJECTIVE:
-                card.cardStatus = CardStatus.IN_OBJECTIVE_PILE
-            elif self.type == CardPileTypes.DISCARD:
-                card.cardStatus = CardStatus.IN_DISCARD_PILE
+            card.cardStatus = f"in_{self.type}_pile"
 
 
     def shuffle(self) -> None:

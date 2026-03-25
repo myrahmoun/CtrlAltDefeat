@@ -4,54 +4,94 @@
 from typing import List, Optional
 from pathlib import Path
 import json
+import random
 
 # Local imports
 from board import Board
-from cardpile import CardPile
+from cardpile import CardPile, CardPileTypes
 from player import Player
-from cards import Hand, ActionCard, ObjectiveCard
-from Operation import Operation
-from Die import Die
+from cards import ActionCard, ObjectiveCard
+from cards import numOfActionCards, numOfGlitchCards, numOfGlitchCards
+from die import Die
 from turn_manager import TurnManager
+from enum import Enum
 
 
 # Game files
-ACTION_CARDS_FILE = "action_cards.json"
-OBJECTIVE_CARDS_FILE = "objective_cards.json"
+ACTION_CARDS_FILE = "data/action_cards.json"
+OBJECTIVE_CARDS_FILE = "data/objective_cards.json"
+
+class GameStats(Enum):
+    LOBBY = 1
+    PlAYING = 2
+    FINISHED = 3
 
 class Game:
     def __init__(self, game_id: str)-> None:
         # Identifiers
         self.game_id: str
-        self.status: str  # 'lobby', 'playing', 'finished'
+        # Set game status to lobby
+        self.status = GameStats.LOBBY
 
         # Game objects
         self.game_id = game_id
         self.board = Board()
-        self.players = []  # List of Player objects
-        self.action_pile = CardPile('action')
-        self.objective_pile = CardPile('objective')
-        self.discard_pile = CardPile('discard')
+        self.players: List[Player] = []  # List of Player objects
+        self.action_pile = CardPile(CardPileTypes.ACTION)
+        self.objective_pile = CardPile(CardPileTypes.OBJECTIVE)
+        self.discard_pile = CardPile(CardPileTypes.DISCARD)
         self.die = Die(6)
         self.current_turn = 0
-        self.status = 'waiting'  # waiting, playing, finished
         self.winner = None
 
         # Initate turn manager
         self.turn_manager = TurnManager(self)
-    
-    def add_player(self, player_id)-> None:
+
+        # Initialize turn order
+        self.turn_order: List[Player] = []
+        self.current_turn_index: int = 0
+
+
+    # === Manage Players ===
+    def add_player(self, player: Player)-> None:
         """Add player to game"""
-        self.players.append(player_id)
+        if self.status == GameStats.LOBBY:
+            self.players.append(player)
+        else:
+            raise ValueError("Game not in Lobby mode. Cannot add player")
         
     def remove_player(self, player_id) -> None:
         """Remove player (disconnect handling)"""
         self.players.remove(player_id)
 
-    def get_player(self, player_id) -> Optional[Player]:
-        """Lookup player by ID"""
-        if player_id in self.players:
-            return player_id # MUST RETURN PLAYER OBJECT? OR JUST ID? LATTER IS CIRCULAR
+    def get_player_by_id(self, player_id: int) -> Optional[Player]:
+        """Lookup player by ID and return player object. Might be useful later for gRPC?"""
+        for player in self.players:
+            if player.id == player_id:
+                return player
+        return None
+        
+    # === Manage Turn Sequence ===
+    def _initialize_turn_order(self):
+        """Randomly assign a turn order for the game """
+        # Check that there some players have joined the game
+        if not self.players:
+            raise ValueError("Cannot initialize turn order: no players in game")
+
+        self.turn_order = self.players 
+        random.shuffle(self.turn_order)
+        self.current_turn_index = 0
+
+        return self.turn_order
+    
+    def get_current_player(self) -> Player:
+        """Return current player"""
+        return self.turn_order[self.current_turn_index]
+    
+    def next_turn(self) -> Player:
+        """Advance to next player"""
+        self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
+        return self.get_current_player()
 
     # === Game Lifecycle ===
     def start_game(self):
@@ -65,39 +105,40 @@ class Game:
         """
         if not self.can_start():
             raise ValueError(f"Cannot start game: need 3-6 players, have {len(self.players)}")
-        
+    
         # Load and shuffle cards
-        self.load_cards_from_json()
+        self._load_cards_from_json()
         self.action_pile.shuffle()
         self.objective_pile.shuffle()
 
         # Deal initial hands to each player
         for player in self.players:
             # Deal 2 objectives
-            for i in range(2):
+            for _ in range(2):
                 card = self.objective_pile.draw()
                 if card is None:
                     raise RuntimeError("Ran out of objective cards during initial deal")
                 player.hand.objective_cards.append(card)
             
             # Deal 4 actions
-            for j in range(4):
+            for _ in range(4):
                 card = self.action_pile.draw()
                 if card is None:
                     raise RuntimeError("Ran out of action cards during initial deal")
                 player.hand.action_cards.append(card)
 
         # Initialize turn order
-        self.turn_manager.initialize_turn_order()
+        self._initialize_turn_order()
 
         # Set status
-        self.status = 'playing'
+        self.status = GameStats.PlAYING
 
 
     def end_game(self, winner: Player) -> None:
         """Mark game as finished, set winner"""
-        self.status = 'finished'
+        self.status = GameStats.FINISHED
         self.winner = winner
+        # TODO: REPAIR - TURN INTO ENUM
         winner.playerStatus = 'finished'
         
     # === State Queries ===
@@ -107,46 +148,10 @@ class Game:
     
     def can_start(self) -> bool:
         """Check if game has 3-6 players and status is 'lobby'"""
-        return 3 <= len(self.players) <= 6 and self.status == 'waiting'
+        return 3 <= len(self.players) <= 6 and self.status == GameStats.LOBBY
 
-    def get_game_state(self) -> dict: # NOTE: AI GENERATED FOR NOW, NOT SURE WHAT gRPC EXPECTS
-        """
-        Serialize current state for gRPC responses:
-        - game_id, status, winner
-        - board positions
-        - all player info (but only visible hand for requesting player)
-        - current turn info
-        """
-        return {
-            'game_id': self.game_id,
-            'status': self.status,
-            'winner': self.winner.id if self.winner else None,
-            'current_turn_player_id': self.turn_manager.get_current_player().id if self.status == 'playing' else None,
-            'players': [
-                {
-                    'id': player.id,
-                    'name': player.name,
-                    'role': player.role,
-                    'position': player.boardPosition,
-                    'status': player.playerStatus,
-                    'hand_size': {
-                        'objectives': len(player.hand.objective_cards),
-                        'actions': len(player.hand.action_cards)
-                    }
-                }
-                for player in self.players
-            ],
-            'board_positions': [
-                {
-                    'position': i,
-                    'player_ids': [p for p in self.board.positions[i]]
-                }
-                for i in range(20)
-            ]
-        }
-
-    # === Card Management (called by TurnManager) ===
-    def load_cards_from_json(self) -> None:
+    # === Card Management ===
+    def _load_cards_from_json(self) -> None:
         """Read card definitions and populate piles"""
         
         # Load action cards
