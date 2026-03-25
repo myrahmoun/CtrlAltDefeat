@@ -7,6 +7,8 @@ Created on 12/12/25
 
 """
 import cards, die
+from cards import CardStatus
+
 
 class LoseTurnException(Exception):
     def __init__(self):
@@ -33,19 +35,19 @@ class Operation(object):
         that card; otherwise return None.
         '''
         return_v = None
-        if  action.category == 'Intelligence':
+        if  action.category == cards.CardCategory.Intelligence:
             if self.intell is not None:
                 return_v = self.intell
             self.intell = action
-        elif action.category == 'Technology':
+        elif action.category == cards.CardCategory.Technology:
             if self.tech is not None:
                 return_v = self.tech
             self.tech = action
-        elif action.category == 'Governance':
+        elif action.category == cards.CardCategory.Governance:
             if self.govern is not None:
                 return_v = self.govern
             self.govern = action
-        elif action.category == 'Cybersecurity':
+        elif action.category == cards.CardCategory.Cybersecurity:
             if self.cyber is not None:
                 return_v = self.cyber
             self.cyber = action
@@ -66,16 +68,16 @@ class Operation(object):
         Return the removed card, or None if there was no card of that category.
         '''
         return_v = None
-        if action.category == 'Intelligence':
+        if action.category == cards.CardCategory.Intelligence:
             return_v = self.intell
             self.intell = None
-        elif action.category == 'Technology':
+        elif action.category == cards.CardCategory.Technology:
             return_v = self.tech
             self.tech = None
-        elif action.category == 'Governance':
+        elif action.category == cards.CardCategory.Governance:
             return_v = self.govern
             self.govern = None
-        elif action.category == 'Cybersecurity':
+        elif action.category == cards.CardCategory.Cybersecurity:
             return_v = self.cyber
             self.cyber = None
         else:

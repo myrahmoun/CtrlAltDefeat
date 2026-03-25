@@ -26,6 +26,22 @@ Parameters:
 actionCards, objectiveCards, glitchCards = [], [], []
 numOfActionCards, numOfObjectiveCards, numOfGlitchCards = 0, 0, 0
 
+from enum import Enum
+
+class CardStatus(Enum):
+    IN_ACTIONPILE = "in_actionpile"
+    IN_CACHE_PILE = "in_cache_pile"
+    IN_OBJECTIVE_PILE = "in_objective_pile"
+    IN_HAND = "In_hand"
+    IN_PLAY = "in_play"
+    IN_DISCARD_PILE = "in_discard_pile"
+
+class CardCategory(Enum):
+    CYBERSECURITY = "Cybersecurity"
+    GOVERNANCE = "Governance"
+    TECHNOLOGY = "Technology"
+    INTELLIGENCE = "Intelligence"
+
 class ActionCard:
     '''
     Creates a new action card.
@@ -39,13 +55,13 @@ class ActionCard:
         self.category = category
         self.responsibility = responsibility
         self.effect = effect
-        self.cardStatus = "in_action_pile"
+        self.cardStatus = CardStatus.IN_ACTIONPILE
 
         # numOfActionCards += 1
         actionCards.append(self)
 
     def __repr__(self):
-        return f"ActionCard(name={self.name}, description={self.description}, category={self.category}, respScore={self.respScore}, effectScore={self.effectScore}, status={self.status})"
+        return f"ActionCard(name={self.name}, description={self.description}, category={self.category}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
 
 
 class ObjectiveCard:
@@ -59,13 +75,13 @@ class ObjectiveCard:
         self.description = description
         self.responsibility = responsibility
         self.effect = effect
-        self.cardStatus = "in_objective_pile"
+        self.cardStatus = CardStatus.IN_OBJECTIVE_PILE
 
         # numOfObjectiveCards += 1
         objectiveCards.append(self)
 
     def __repr__(self):
-        return f"ObjectiveCard(name={self.name}, description={self.description}, respScore={self.respScore}, effectScore={self.effectScore})"
+        return f"ObjectiveCard(name={self.name}, description={self.description}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
 
 class GlitchCard:
     '''
@@ -77,13 +93,13 @@ class GlitchCard:
         self.name = name
         self.description = description
         self.glitchType = glitchType
-        self.cardStatus = "in_action_pile"
+        self.cardStatus = CardStatus.IN_ACTIONPILE
 
         # numOfGlitchCards += 1
         glitchCards.append(self)
 
     def __repr__(self):
-        return f"GlitchCard(name={self.name}, description={self.description}, glitch={self.glitch})"
+        return f"GlitchCard(name={self.name}, description={self.description}, glitch={self.glitchType}, status={self.cardStatus})"
 
 
 class Hand:
