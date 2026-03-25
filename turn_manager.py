@@ -28,7 +28,7 @@ class TurnManager:
             player: The player taking their turn
             objective: The objective card being played
             actions: List of 4 action cards (one per category)
-            die_roll: Optional die roll value (required if operation needs die roll)
+            die_roll: Optional die roll value (required if Operation needs die roll)
             
         Returns:
             dict with turn results including success, spaces_moved, etc.
