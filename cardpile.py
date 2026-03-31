@@ -8,6 +8,7 @@ class CardPileTypes(Enum):
     OBJECTIVE = 2
     DISCARD = 3
 
+
 class CardPile():
     '''
     Manages a pile of cards (action deck, objective deck, or discard pile).
