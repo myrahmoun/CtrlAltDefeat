@@ -1,19 +1,15 @@
-# refactor_game.py
-
-# Library imports
-from typing import List, Dict, Tuple, Optional
+from typing import List
 from pathlib import Path
+from enum import Enum
 import json
 import random
 
-# Local imports
 from board import Board
 from cardpile import CardPile, CardPileTypes
 from player import Player
-from cards import ActionCard, ObjectiveCard, GlitchCard,  numOfActionCards, numOfGlitchCards, numOfGlitchCards
+from cards import ActionCard, ObjectiveCard
 from die import Die
-from enum import Enum
-from operation import Operation, LoseTurnException, InvalidOperationException
+from operation import Operation, LoseTurnException
 
 
 # Game files
@@ -115,6 +111,9 @@ class Game():
         self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
         return self.get_current_player()
 
+    def pass_turn(self) -> None:
+        self.next_turn()
+
     def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
         if player.lose_next_turn:
             player.lose_next_turn = False
@@ -184,7 +183,3 @@ class Game():
     def end_game(self, winner: Player) -> None:
         self.status = GameStats.FINISHED
         self.winner = winner
-
-
-
-
