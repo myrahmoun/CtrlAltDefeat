@@ -41,7 +41,6 @@ class Game():
 
         self.turn_order: List[Player] = []
         self.current_turn_index: int = 0
-        self.turn_history: List[dict] = []
 
     def setup_game(self) -> None:
         if not self._can_start():
@@ -75,11 +74,11 @@ class Game():
         self.status = GameStats.PLAYING
 
         
-
     def _can_start(self) -> bool:
         """Check if game has 3-6 players and status is 'lobby'"""
         return 3 <= len(self.players) <= 6 and self.status == GameStats.LOBBY
     
+
     def _load_cards(self, path: Path, pile_type: CardPileTypes) -> None:
         if not path.exists():
             raise FileNotFoundError(f"Cards file not found: {path}")
@@ -109,8 +108,82 @@ class Game():
             ]
             self.objective_pile.load_cards(cards)
 
+    def get_current_player(self) -> Player:
+        return self.turn_order[self.current_turn_index]
 
+    def next_turn(self) -> Player:
+        self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
+        return self.get_current_player()
 
+    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
+        if player.lose_next_turn:
+            player.lose_next_turn = False
+            self.next_turn()
+            return
+
+        if len(actions) != 4 or not objective:
+            raise ValueError("Need exactly 4 action cards and 1 objective card")
+
+        self.board.display_cards(objective, actions)
+        self._execute_operation(player, objective, actions)
+
+        if player.boardPosition >= 19:
+            self.end_game(player)
+            return
+
+        for card in actions:
+            self.discard_pile.add(card)
+            player.hand.action_cards.remove(card)
+
+        player.hand.objective_cards.remove(objective)
+        self.objective_pile.content.append(objective)
+
+        new_obj = self.objective_pile.draw()
+        if not new_obj:
+            raise RuntimeError("Cannot draw objective card")
+        player.hand.objective_cards.append(new_obj)
+
+        for _ in range(2):
+            self._refill_if_empty(self.action_pile)
+            card = self.action_pile.draw()
+            if not card:
+                raise RuntimeError("Cannot draw action card")
+            player.hand.action_cards.append(card)
+
+        self.board.clear_card_slots()
+        self.next_turn()
+
+    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
+        operation = Operation(objective)
+        for action in actions:
+            operation.add_action(action)
+
+        try:
+            spaces_to_move = operation.evaluate_op()
+            player.boardPosition = min(player.boardPosition + spaces_to_move, 19)
+
+            if operation.responsibility >= 4:
+                player.boardPosition = min(player.boardPosition + 1, 19)
+                for _ in range(2):
+                    self._refill_if_empty(self.action_pile)
+                    card = self.action_pile.draw()
+                    if card and len(player.hand.action_cards) < 6:
+                        player.hand.action_cards.append(card)
+
+        except LoseTurnException:
+            player.lose_next_turn = True
+
+    def _refill_if_empty(self, pile: CardPile) -> None:
+        if pile.is_empty():
+            if self.discard_pile.is_empty():
+                raise RuntimeError("Cannot refill: both deck and discard pile are empty")
+            pile.content = self.discard_pile.content
+            self.discard_pile.content = []
+            pile.shuffle()
+
+    def end_game(self, winner: Player) -> None:
+        self.status = GameStats.FINISHED
+        self.winner = winner
 
 
 
