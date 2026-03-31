@@ -16,10 +16,13 @@ def show_hand(player):
 
 
 def prompt_card_selection(player):
+    print("(or type 'back' to go back)")
     while True:
         try:
-            raw = input("\nChoose cards (obj act1 act2 act3 act4 by index): ")
-            indices = [int(x) for x in raw.strip().split()]
+            raw = input("\nChoose cards (obj act1 act2 act3 act4 by index): ").strip()
+            if raw.lower() == 'back':
+                return None, None
+            indices = [int(x) for x in raw.split()]
             if len(indices) != 5:
                 print("Need exactly 5 indices.")
                 continue
@@ -100,6 +103,9 @@ def main():
                 game.pass_turn()
             else:
                 obj, actions = prompt_card_selection(player)
+                if obj is None or actions is None:
+                    game.pass_turn()
+                    continue
                 print(f"\nPlaying: {obj.name} + {[c.name for c in actions]}")
                 result = game.execute_turn(player, obj, actions)
                 if result:

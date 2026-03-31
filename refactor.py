@@ -124,7 +124,7 @@ class Game():
             raise ValueError("Need exactly 4 action cards and 1 objective card")
 
         self.board.display_cards(objective, actions)
-        self._execute_operation(player, objective, actions)
+        result = self._execute_operation(player, objective, actions)
 
         # Detect win
         if player.boardPosition >= 19:
@@ -147,18 +147,31 @@ class Game():
 
         self.board.clear_card_slots()
         self.next_turn()
+        return result
 
-    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
+    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> dict:
         operation = Operation(objective)
         for action in actions:
             operation.add_action(action)
 
+        result = {
+            'responsibility': operation.responsibility,
+            'effect': operation.effect,
+            'success': False,
+            'spaces_moved': 0,
+            'bonus': False,
+            'lose_turn': False,
+        }
+
         try:
             spaces_to_move = operation.evaluate_op()
             player.boardPosition = min(player.boardPosition + spaces_to_move, 19)
+            result['success'] = True
+            result['spaces_moved'] = spaces_to_move
 
             if operation.responsibility >= 4:
                 player.boardPosition = min(player.boardPosition + 1, 19)
+                result['bonus'] = True
                 for _ in range(2):
                     self._refill_if_empty(self.action_pile)
                     card = self.action_pile.draw()
@@ -167,6 +180,9 @@ class Game():
 
         except LoseTurnException:
             player.lose_next_turn = True
+            result['lose_turn'] = True
+
+        return result
 
     def _refill_if_empty(self, pile: CardPile) -> None:
         if pile.is_empty():
