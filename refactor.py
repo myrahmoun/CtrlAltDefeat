@@ -126,10 +126,12 @@ class Game():
         self.board.display_cards(objective, actions)
         self._execute_operation(player, objective, actions)
 
+        # Detect win
         if player.boardPosition >= 19:
             self.end_game(player)
             return
-
+        
+        # Discard cards
         for card in actions:
             self.discard_pile.add(card)
             player.hand.action_cards.remove(card)
@@ -137,6 +139,7 @@ class Game():
         player.hand.objective_cards.remove(objective)
         self.objective_pile.content.append(objective)
 
+        # Refill hand
         new_obj = self.objective_pile.draw()
         if not new_obj:
             raise RuntimeError("Cannot draw objective card")
