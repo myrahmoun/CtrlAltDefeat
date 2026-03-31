@@ -94,7 +94,7 @@ class Operation(object):
             self.objective is None):
             raise InvalidOperationException
 
-        die_roll = die.Die.roll()
+        die_roll = die.Die(6).roll()
         if self.responsibility > 3:
             return_val = self.effect
         elif self.responsibility > 0:
