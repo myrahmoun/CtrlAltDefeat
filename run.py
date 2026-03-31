@@ -73,16 +73,57 @@ def main():
 
         if player.lose_next_turn:
             print(f"{player.name} lost their turn!")
-            game.execute_turn(player, None, []) # TODO: Will cause bugs in the future
+            game.execute_turn(player, None, [])
         else:
+            # Draw 2 cards at start of turn
+            for _ in range(2):
+                game._refill_if_empty(game.action_pile)
+                card = game.action_pile.draw()
+                if card:
+                    player.hand.action_cards.append(card)
+
+            # Enforce 6-card max before player decides
+            while len(player.hand.action_cards) > 6:
+                show_hand(player)
+                print(f"\nYou have {len(player.hand.action_cards)} cards — discard down to 6.")
+                try:
+                    idx = int(input("Discard card at index: "))
+                    card = player.hand.action_cards[idx]
+                    player.hand.action_cards.remove(card)
+                    game.discard_pile.add(card)
+                except (ValueError, IndexError):
+                    print("Invalid index.")
+
             show_hand(player)
             action = input("\n(p)lay or (s)kip? ").strip().lower()
             if action == 's':
                 game.pass_turn()
-                continue
-            obj, actions = prompt_card_selection(player)
-            print(f"\nPlaying: {obj.name} + {[c.name for c in actions]}")
-            game.execute_turn(player, obj, actions)
+            else:
+                obj, actions = prompt_card_selection(player)
+                print(f"\nPlaying: {obj.name} + {[c.name for c in actions]}")
+                result = game.execute_turn(player, obj, actions)
+                if result:
+                    r, e = result['responsibility'], result['effect']
+                    if result['lose_turn']:
+                        print(f"Operation failed! R:{r} — going offline next turn.")
+                    elif not result['success']:
+                        print(f"Operation failed. R:{r}, E:{e} — no movement.")
+                    else:
+                        moved = result['spaces_moved'] + (1 if result['bonus'] else 0)
+                        bonus_str = " (+1 bonus, drew 2 cards)" if result['bonus'] else ""
+                        print(f"Success! R:{r}, E:{e} — moved {moved} space(s){bonus_str}. Now at {player.boardPosition}.")
+
+            # Enforce 6-card max after bonus draw
+            while len(player.hand.action_cards) > 6:
+                show_hand(player)
+                print(f"\nYou have {len(player.hand.action_cards)} cards — discard down to 6.")
+                try:
+                    idx = int(input("Discard card at index: "))
+                    card = player.hand.action_cards[idx]
+                    player.hand.action_cards.remove(card)
+                    game.discard_pile.add(card)
+                except (ValueError, IndexError):
+                    print("Invalid index.")
 
         if game.winner:
             print(f"\n{'='*50}")
