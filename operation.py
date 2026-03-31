@@ -6,7 +6,7 @@ Created on 12/12/25
 @author waldo
 
 """
-import cards, die
+import die
 
 class LoseTurnException(Exception):
     def __init__(self):
