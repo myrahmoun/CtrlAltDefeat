@@ -114,7 +114,7 @@ class Game():
     def pass_turn(self) -> None:
         self.next_turn()
 
-    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
+    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]):
         if player.lose_next_turn:
             player.lose_next_turn = False
             self.next_turn()
