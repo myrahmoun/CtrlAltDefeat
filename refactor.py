@@ -139,18 +139,11 @@ class Game():
         player.hand.objective_cards.remove(objective)
         self.objective_pile.content.append(objective)
 
-        # Refill hand
+        # Draw new objective card
         new_obj = self.objective_pile.draw()
         if not new_obj:
             raise RuntimeError("Cannot draw objective card")
         player.hand.objective_cards.append(new_obj)
-
-        for _ in range(2):
-            self._refill_if_empty(self.action_pile)
-            card = self.action_pile.draw()
-            if not card:
-                raise RuntimeError("Cannot draw action card")
-            player.hand.action_cards.append(card)
 
         self.board.clear_card_slots()
         self.next_turn()
