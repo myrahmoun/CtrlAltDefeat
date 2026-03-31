@@ -101,7 +101,25 @@ class TurnManager:
 
         # Can return a dict of results here (later for gRPC)
 
-    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard])->tuple:
+    def skip_turn(self, player: Player, reason: str = "timeout") -> None:
+        """
+        Skip a player's turn (e.g., due to timeout or glitch effect).
+        """
+        self.turn_history.append({
+            'event': 'turn_skipped',
+            'player_id': player.id,
+            'player_name': player.name,
+            'reason': reason
+        })
+        
+        # Move to next turn
+        self.game.next_turn()
+
+    def pass_turn(self, player: Player) -> None:
+        """Player voluntarily passes their turn."""
+        self.skip_turn(player, reason="passed")
+        # TODO: UPDATE STATUS OR SOMETHING TO IMPACT TURN EXEC
+        def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard])->tuple:
         """Build an operation and evaluate it. Return (was operation successful, is a bonus applicable)"""
 
         operation = Operation(objective)
@@ -142,23 +160,3 @@ class TurnManager:
             spaces_to_move = 0  
 
         return success, bonus_applied, spaces_to_move
-
-    def skip_turn(self, player: Player, reason: str = "timeout") -> None:
-        """
-        Skip a player's turn (e.g., due to timeout or glitch effect).
-        """
-        self.turn_history.append({
-            'event': 'turn_skipped',
-            'player_id': player.id,
-            'player_name': player.name,
-            'reason': reason
-        })
-        
-        # Move to next turn
-        self.game.next_turn()
-
-
-    def pass_turn(self, player: Player) -> None:
-        """Player voluntarily passes their turn."""
-        self.skip_turn(player, reason="passed")
-        # TODO: UPDATE STATUS OR SOMETHING TO IMPACT TURN EXEC
