@@ -8,4 +8,5 @@ conftest.py
 /.pytest_cache
 instructions.md
 refactor.md
+api_plan.md
 
