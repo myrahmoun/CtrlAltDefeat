@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package beanbag;
+
+// ── RPCs ──────────────────────────────────────────────────────────────────
+
+service BeanBag {
+  // Lobby
+  rpc CreateGame (CreateGameRequest) returns (GameState);
+  rpc JoinGame   (JoinRequest)       returns (JoinResponse);
+  rpc StartGame  (StartRequest)      returns (GameState);
+
+  // Gameplay
+  rpc GetState   (StateRequest)      returns (GameState);
+  rpc PlayTurn   (TurnRequest)       returns (TurnResult);
+  rpc DiscardCard(DiscardRequest)    returns (GameState);
+  rpc SkipTurn   (SkipRequest)       returns (GameState);
+
+  // Streaming — server pushes updates to all watchers
+  rpc WatchGame  (WatchRequest)      returns (stream GameState);
+}
+
+// ── Request / Response messages ───────────────────────────────────────────
+
+message CreateGameRequest {}
+
+message JoinRequest {
+  string game_id     = 1;
+  string player_name = 2;
+}
+
+message JoinResponse {
+  string    player_id = 1;
+  GameState state     = 2;
+}
+
+message StartRequest {
+  string game_id = 1;
+}
+
+message StateRequest {
+  string game_id = 1;
+}
+
+message TurnRequest {
+  string         game_id          = 1;
+  string         player_id        = 2;
+  int32          objective_index  = 3;
+  repeated int32 action_indices   = 4;
+}
+
+message TurnResult {
+  bool      success        = 1;
+  int32     spaces_moved   = 2;
+  bool      bonus          = 3;
+  bool      lose_turn      = 4;
+  int32     responsibility = 5;
+  int32     effect         = 6;
+  GameState new_state      = 7;
+}
+
+message DiscardRequest {
+  string game_id    = 1;
+  string player_id  = 2;
+  int32  card_index = 3;
+}
+
+message SkipRequest {
+  string game_id   = 1;
+  string player_id = 2;
+}
+
+message WatchRequest {
+  string game_id = 1;
+}
+
+// ── State messages ────────────────────────────────────────────────────────
+
+message GameState {
+  string          game_id           = 1;
+  string          status            = 2;
+  repeated Player players           = 3;
+  string          current_player_id = 4;
+  string          winner_id         = 5;
+}
+
+message Player {
+  string            id             = 1;
+  string            name           = 2;
+  int32             board_position = 3;
+  bool              lose_next_turn = 4;
+  Hand              hand           = 5;
+}
+
+message Hand {
+  repeated ActionCard    action_cards    = 1;
+  repeated ObjectiveCard objective_cards = 2;
+}
+
+message ActionCard {
+  string name           = 1;
+  string description    = 2;
+  string category       = 3;
+  int32  responsibility = 4;
+  int32  effect         = 5;
+}
+
+message ObjectiveCard {
+  string name           = 1;
+  string description    = 2;
+  int32  responsibility = 3;
+  int32  effect         = 4;
+}
