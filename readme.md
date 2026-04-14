@@ -2,19 +2,42 @@
 
 Terminal-based implementation of the Ctrl Alt Defeat card game. See `instructions.md` for full game rules.
 
-## Run
+## Play
 
-```
+### Single machine
+
+All players share one terminal:
+
+```bash
 python run.py
 ```
 
-Requires Python 3.14. All players share the same terminal.
+### Multiplayer (LAN)
+
+Each player connects from their own machine over a local network.
+
+**Host machine — start the server:**
+```bash
+python server.py
+```
+
+**Every player (including host) — start a client:**
+```bash
+python client.py
+```
+
+When prompted, enter the host's local IP and port (e.g. `192.168.1.10:50051`). The first player to connect creates a game and shares the game ID with the others. Once everyone has joined, press Enter to start.
+
+Requires Python 3.14 and the following packages:
+```bash
+pip install grpcio grpcio-tools
+```
 
 ## Structure
 
 | File | Purpose |
 |------|---------|
-| `run.py` | Entry point — handles all terminal I/O and the game loop |
+| `run.py` | Single-machine entry point |
 | `refactor.py` | `Game` class — all game logic (setup, turns, card management) |
 | `player.py` | `Player` model |
 | `cards.py` | `ActionCard`, `ObjectiveCard`, `GlitchCard`, `Hand` |
@@ -24,10 +47,13 @@ Requires Python 3.14. All players share the same terminal.
 | `die.py` | Die roll |
 | `data/` | Card definitions (JSON) |
 | `tests/` | pytest tests |
+| `game.proto` | gRPC service and message definitions |
+| `server.py` | gRPC server — hosts game state and logic |
+| `client.py` | gRPC client — networked player terminal |
 
 ## Tests
 
-```
+```bash
 pytest tests/
 ```
 

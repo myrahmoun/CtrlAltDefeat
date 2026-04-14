@@ -154,21 +154,35 @@ def main():
             stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
             continue
 
-        show_hand(me)
-        action = input("\n(p)lay, (s)kip, or (q)uit? ").strip().lower()
+        selection = None
+        action = ''
+        while selection is None:
+            show_hand(me)
+            action = input("\n(p)lay, (s)kip, (d)iscard, or (q)uit? ").strip().lower()
 
-        if action == 'q':
-            stub.LeaveGame(game_pb2.LeaveRequest(game_id=game_id, player_id=player_id))
-            print("You left the game.")
-            return
+            if action == 'q':
+                stub.LeaveGame(game_pb2.LeaveRequest(game_id=game_id, player_id=player_id))
+                print("You left the game.")
+                return
 
-        if action == 's':
-            stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
-            continue
+            if action == 's':
+                stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
+                break
 
-        selection = prompt_card_selection(me)
-        if selection is None:
-            stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
+            if action == 'd':
+                try:
+                    idx = int(input("Discard card at index: "))
+                    state = stub.DiscardCard(game_pb2.DiscardRequest(
+                        game_id=game_id, player_id=player_id, card_index=idx
+                    ))
+                    me = next(p for p in state.players if p.id == player_id)
+                except (ValueError, grpc.RpcError) as e:
+                    print(f"Error: {e}")
+
+            elif action == 'p':
+                selection = prompt_card_selection(me)
+
+        if action != 'p' or selection is None:
             continue
 
         obj_idx, action_idxs = selection
