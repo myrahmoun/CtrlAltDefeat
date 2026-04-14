@@ -40,7 +40,7 @@ def prompt_card_selection(player):
             print("Invalid input. Example: 0 0 1 2 3")
 
 
-def register_players(game):
+def register_players(game: Game):
     while True:
         try:
             n = int(input("How many players (3-6)? "))

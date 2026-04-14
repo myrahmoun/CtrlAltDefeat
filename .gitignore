@@ -1,8 +1,11 @@
 /.venv
+.DS_Store
 conftest.py
 /data
 /tests
 /scripts
+/__pycache__
+/.pytest_cache
 instructions.md
 refactor.md
 
