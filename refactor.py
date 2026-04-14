@@ -123,14 +123,13 @@ class Game():
         if len(actions) != 4 or not objective:
             raise ValueError("Need exactly 4 action cards and 1 objective card")
 
-        self.board.display_cards(objective, actions)
         result = self._execute_operation(player, objective, actions)
 
         # Detect win
         if player.boardPosition >= 19:
             self.end_game(player)
             return
-        
+
         # Discard cards
         for card in actions:
             self.discard_pile.add(card)
@@ -145,7 +144,6 @@ class Game():
             raise RuntimeError("Cannot draw objective card")
         player.hand.objective_cards.append(new_obj)
 
-        self.board.clear_card_slots()
         self.next_turn()
         return result
 
