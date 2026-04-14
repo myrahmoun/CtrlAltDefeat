@@ -13,14 +13,12 @@ Player Parameters:
         - "finished"
 '''
 
+import uuid
 import cards
 
 class Player:
-    _next_id = 1  # class-level counter
-
     def __init__(self, name, role='ally'):
-        self.id = Player._next_id
-        Player._next_id += 1
+        self.id = str(uuid.uuid4())
 
         self.name = name
         self.role = role
