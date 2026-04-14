@@ -88,6 +88,9 @@ class BeanBagServicer(game_pb2_grpc.BeanBagServicer):
         if not game:
             context.abort(grpc.StatusCode.NOT_FOUND, f"Game {request.game_id} not found")
 
+        if any(p.name == request.player_name for p in game.players):
+            context.abort(grpc.StatusCode.ALREADY_EXISTS, f"Name '{request.player_name}' is already taken")
+
         player = GamePlayer(request.player_name)
         game.players.append(player)
         print(f"[server] {player.name} ({player.id}) joined game {game.id}")
@@ -169,6 +172,19 @@ class BeanBagServicer(game_pb2_grpc.BeanBagServicer):
             context.abort(grpc.StatusCode.NOT_FOUND, f"Game {request.game_id} not found")
 
         game.pass_turn()
+        _broadcast(game.id, game)
+        return _to_proto_state(game)
+
+    def LeaveGame(self, request, context):
+        game = _games.get(request.game_id)
+        if not game:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"Game {request.game_id} not found")
+
+        player = _find_player(game, request.player_id)
+        game.players.remove(player)
+        if player in game.turn_order:
+            game.turn_order.remove(player)
+        print(f"[server] {player.name} left game {game.id}")
         _broadcast(game.id, game)
         return _to_proto_state(game)
 

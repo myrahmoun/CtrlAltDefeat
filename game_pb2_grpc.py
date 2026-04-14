@@ -71,6 +71,11 @@ class BeanBagStub(object):
                 request_serializer=game__pb2.SkipRequest.SerializeToString,
                 response_deserializer=game__pb2.GameState.FromString,
                 _registered_method=True)
+        self.LeaveGame = channel.unary_unary(
+                '/beanbag.BeanBag/LeaveGame',
+                request_serializer=game__pb2.LeaveRequest.SerializeToString,
+                response_deserializer=game__pb2.GameState.FromString,
+                _registered_method=True)
         self.WatchGame = channel.unary_stream(
                 '/beanbag.BeanBag/WatchGame',
                 request_serializer=game__pb2.WatchRequest.SerializeToString,
@@ -127,6 +132,12 @@ class BeanBagServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def LeaveGame(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def WatchGame(self, request, context):
         """Streaming — server pushes updates to all watchers
         """
@@ -170,6 +181,11 @@ def add_BeanBagServicer_to_server(servicer, server):
             'SkipTurn': grpc.unary_unary_rpc_method_handler(
                     servicer.SkipTurn,
                     request_deserializer=game__pb2.SkipRequest.FromString,
+                    response_serializer=game__pb2.GameState.SerializeToString,
+            ),
+            'LeaveGame': grpc.unary_unary_rpc_method_handler(
+                    servicer.LeaveGame,
+                    request_deserializer=game__pb2.LeaveRequest.FromString,
                     response_serializer=game__pb2.GameState.SerializeToString,
             ),
             'WatchGame': grpc.unary_stream_rpc_method_handler(
@@ -368,6 +384,33 @@ class BeanBag(object):
             target,
             '/beanbag.BeanBag/SkipTurn',
             game__pb2.SkipRequest.SerializeToString,
+            game__pb2.GameState.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def LeaveGame(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/beanbag.BeanBag/LeaveGame',
+            game__pb2.LeaveRequest.SerializeToString,
             game__pb2.GameState.FromString,
             options,
             channel_credentials,
