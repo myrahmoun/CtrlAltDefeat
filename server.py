@@ -102,6 +102,9 @@ class BeanBagServicer(game_pb2_grpc.BeanBagServicer):
         if not game:
             context.abort(grpc.StatusCode.NOT_FOUND, f"Game {request.game_id} not found")
 
+        if game.status != GameStats.LOBBY:
+            return _to_proto_state(game)
+
         game.setup_game()
         print(f"[server] Game {game.id} started")
         _broadcast(game.id, game)
@@ -170,6 +173,13 @@ class BeanBagServicer(game_pb2_grpc.BeanBagServicer):
         game = _games.get(request.game_id)
         if not game:
             context.abort(grpc.StatusCode.NOT_FOUND, f"Game {request.game_id} not found")
+
+        player = _find_player(game, request.player_id)
+        for _ in range(2):
+            game._refill_if_empty(game.action_pile)
+            card = game.action_pile.draw()
+            if card and len(player.hand.action_cards) < 6:
+                player.hand.action_cards.append(card)
 
         game.pass_turn()
         _broadcast(game.id, game)

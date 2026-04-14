@@ -155,7 +155,12 @@ def main():
             continue
 
         show_hand(me)
-        action = input("\n(p)lay or (s)kip? ").strip().lower()
+        action = input("\n(p)lay, (s)kip, or (q)uit? ").strip().lower()
+
+        if action == 'q':
+            stub.LeaveGame(game_pb2.LeaveRequest(game_id=game_id, player_id=player_id))
+            print("You left the game.")
+            return
 
         if action == 's':
             stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
