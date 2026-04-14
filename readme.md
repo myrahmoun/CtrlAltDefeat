@@ -30,3 +30,5 @@ Requires Python 3.14. All players share the same terminal.
 ```
 pytest tests/
 ```
+
+Co-authored by Claude Sonnet
