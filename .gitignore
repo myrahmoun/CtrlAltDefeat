@@ -10,3 +10,8 @@ instructions.md
 refactor.md
 api_plan.md
 
+
+# GRPC
+game_pb2.py
+game_pb2_grpc.py
+

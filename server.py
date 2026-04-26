@@ -3,7 +3,7 @@ import uuid
 import queue
 from concurrent import futures
 
-from refactor import Game, GameStats
+from game import Game, GameStats
 from player import Player as GamePlayer
 import game_pb2
 import game_pb2_grpc

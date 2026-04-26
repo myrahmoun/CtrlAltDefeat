@@ -1,4 +1,4 @@
-from refactor import Game, GameStats
+from game import Game, GameStats
 from player import Player
 
 

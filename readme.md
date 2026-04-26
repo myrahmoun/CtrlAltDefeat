@@ -28,9 +28,14 @@ python client.py
 
 When prompted, enter the host's local IP and port (e.g. `192.168.1.10:50051`). The first player to connect creates a game and shares the game ID with the others. Once everyone has joined, press Enter to start.
 
-Requires Python 3.14 and the following packages:
+Requires Python 3.14. Install dependencies:
 ```bash
-pip install grpcio grpcio-tools
+pip install -r requirements.txt
+```
+
+After installing, regenerate the gRPC bindings:
+```bash
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. game.proto
 ```
 
 ## Structure
