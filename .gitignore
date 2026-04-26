@@ -6,6 +6,7 @@ conftest.py
 /scripts
 /__pycache__
 /.pytest_cache
+/docs
 instructions.md
 refactor.md
 api_plan.md
