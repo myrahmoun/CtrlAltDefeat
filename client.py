@@ -139,6 +139,7 @@ def main():
             print(f"Can't start yet: {e.details()}")
 
     # Game loop
+    first_turn = True
     while True:
         state = stub.GetState(game_pb2.StateRequest(game_id=game_id))
 
@@ -159,13 +160,15 @@ def main():
                 stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
                 continue
 
-            # Draw 2 cards, then force discard if hand exceeds 6
-            state = stub.DrawCards(game_pb2.DrawRequest(game_id=game_id, player_id=player_id))
-            me = next(p for p in state.players if p.id == player_id)
-            if len(me.hand.action_cards) > 6:
-                print(f"\nYou drew 2 cards and now have {len(me.hand.action_cards)} — discard down to 6.")
-                state = prompt_discard(stub, game_id, player_id, state)
+            # Draw 2 cards (skip on first turn — hand is already dealt)
+            if not first_turn:
+                state = stub.DrawCards(game_pb2.DrawRequest(game_id=game_id, player_id=player_id))
                 me = next(p for p in state.players if p.id == player_id)
+                if len(me.hand.action_cards) > 6:
+                    print(f"\nYou drew 2 cards and now have {len(me.hand.action_cards)} — discard down to 6.")
+                    state = prompt_discard(stub, game_id, player_id, state)
+                    me = next(p for p in state.players if p.id == player_id)
+            first_turn = False
 
             selection = None
             action = ''
