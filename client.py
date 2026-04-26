@@ -105,9 +105,8 @@ def watch_loop(stub, game_id) -> None:
 # ── Main ──────────────────────────────────────────────────────────────────
 
 def main():
-    addr = input("Server address (e.g. 192.168.1.10:50051): ").strip()
-    channel = grpc.insecure_channel(addr)
-    stub = game_pb2_grpc.BeanBagStub(channel)
+    addr = input("Server address (In demo use localhost:50051): ").strip()
+    stub = game_pb2_grpc.BeanBagStub(grpc.insecure_channel(addr))
 
     # Lobby: create or join a game
     game_id = input("Game ID to join (or press Enter to create a new game): ").strip()
@@ -126,9 +125,7 @@ def main():
         except grpc.RpcError as e:
             print(f"Couldn't join: {e.details()}")
 
-    # Start background watcher
-    t = threading.Thread(target=watch_loop, args=(stub, game_id), daemon=True)
-    t.start()
+    threading.Thread(target=watch_loop, args=(stub, game_id), daemon=True).start()
 
     while True:
         input("\nPress Enter when all players have joined to start the game...")
@@ -204,10 +201,8 @@ def main():
         obj_idx, action_idxs = selection
         try:
             result = stub.PlayTurn(game_pb2.TurnRequest(
-                game_id=game_id,
-                player_id=player_id,
-                objective_index=obj_idx,
-                action_indices=action_idxs,
+                game_id=game_id, player_id=player_id,
+                objective_index=obj_idx, action_indices=action_idxs,
             ))
         except grpc.RpcError as e:
             print(f"Error: {e.details()}")
