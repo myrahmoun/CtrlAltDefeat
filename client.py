@@ -5,6 +5,9 @@ import game_pb2_grpc
 
 REQUIRED_CATEGORIES = {'Intelligence', 'Technology', 'Governance', 'Cybersecurity'}
 
+# Held by the main thread during interactive prompts to silence the watcher
+_my_turn = threading.Lock()
+
 
 # ── Rendering ─────────────────────────────────────────────────────────────
 
@@ -93,7 +96,8 @@ def watch_loop(stub, game_id) -> None:
     """Runs in a background thread — re-renders the board on every server push."""
     try:
         for state in stub.WatchGame(game_pb2.WatchRequest(game_id=game_id)):
-            render_state(state)
+            with _my_turn:
+                render_state(state)
     except grpc.RpcError:
         pass  # server closed or game ended
 
@@ -146,41 +150,50 @@ def main():
             input("\nWaiting for your turn — press Enter to refresh...")
             continue
 
-        me = next(p for p in state.players if p.id == player_id)
-        print(f"\nIt's your turn! (position {me.board_position}/19)")
+        with _my_turn:
+            me = next(p for p in state.players if p.id == player_id)
+            print(f"\nIt's your turn! (position {me.board_position}/19)")
 
-        if me.lose_next_turn:
-            print("You lost your turn!")
-            stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
-            continue
-
-        selection = None
-        action = ''
-        while selection is None:
-            show_hand(me)
-            action = input("\n(p)lay, (s)kip, (d)iscard, or (q)uit? ").strip().lower()
-
-            if action == 'q':
-                stub.LeaveGame(game_pb2.LeaveRequest(game_id=game_id, player_id=player_id))
-                print("You left the game.")
-                return
-
-            if action == 's':
+            if me.lose_next_turn:
+                print("You lost your turn!")
                 stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
-                break
+                continue
 
-            if action == 'd':
-                try:
-                    idx = int(input("Discard card at index: "))
-                    state = stub.DiscardCard(game_pb2.DiscardRequest(
-                        game_id=game_id, player_id=player_id, card_index=idx
-                    ))
-                    me = next(p for p in state.players if p.id == player_id)
-                except (ValueError, grpc.RpcError) as e:
-                    print(f"Error: {e}")
+            # Draw 2 cards, then force discard if hand exceeds 6
+            state = stub.DrawCards(game_pb2.DrawRequest(game_id=game_id, player_id=player_id))
+            me = next(p for p in state.players if p.id == player_id)
+            if len(me.hand.action_cards) > 6:
+                print(f"\nYou drew 2 cards and now have {len(me.hand.action_cards)} — discard down to 6.")
+                state = prompt_discard(stub, game_id, player_id, state)
+                me = next(p for p in state.players if p.id == player_id)
 
-            elif action == 'p':
-                selection = prompt_card_selection(me)
+            selection = None
+            action = ''
+            while selection is None:
+                show_hand(me)
+                action = input("\n(p)lay, (s)kip, (d)iscard, or (q)uit? ").strip().lower()
+
+                if action == 'q':
+                    stub.LeaveGame(game_pb2.LeaveRequest(game_id=game_id, player_id=player_id))
+                    print("You left the game.")
+                    return
+
+                if action == 's':
+                    stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
+                    break
+
+                if action == 'd':
+                    try:
+                        idx = int(input("Discard card at index: "))
+                        state = stub.DiscardCard(game_pb2.DiscardRequest(
+                            game_id=game_id, player_id=player_id, card_index=idx
+                        ))
+                        me = next(p for p in state.players if p.id == player_id)
+                    except (ValueError, grpc.RpcError) as e:
+                        print(f"Error: {e}")
+
+                elif action == 'p':
+                    selection = prompt_card_selection(me)
 
         if action != 'p' or selection is None:
             continue

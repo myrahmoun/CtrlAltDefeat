@@ -16,6 +16,7 @@ service BeanBag {
   rpc DiscardCard(DiscardRequest)    returns (GameState);
   rpc SkipTurn   (SkipRequest)       returns (GameState);
 
+  rpc DrawCards  (DrawRequest)        returns (GameState);
   rpc LeaveGame  (LeaveRequest)       returns (GameState);
 
   // Streaming — server pushes updates to all watchers
@@ -74,6 +75,11 @@ message SkipRequest {
 
 message WatchRequest {
   string game_id = 1;
+}
+
+message DrawRequest {
+  string game_id   = 1;
+  string player_id = 2;
 }
 
 message LeaveRequest {

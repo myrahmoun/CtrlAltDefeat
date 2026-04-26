@@ -126,13 +126,6 @@ class BeanBagServicer(game_pb2_grpc.BeanBagServicer):
         if player.id != current.id:
             context.abort(grpc.StatusCode.FAILED_PRECONDITION, "It is not your turn")
 
-        # Draw 2 action cards at the start of the turn
-        for _ in range(2):
-            game._refill_if_empty(game.action_pile)
-            card = game.action_pile.draw()
-            if card and len(player.hand.action_cards) < 6:
-                player.hand.action_cards.append(card)
-
         obj = player.hand.objective_cards[request.objective_index]
         actions = [player.hand.action_cards[i] for i in request.action_indices]
 
@@ -169,7 +162,7 @@ class BeanBagServicer(game_pb2_grpc.BeanBagServicer):
         _broadcast(game.id, game)
         return _to_proto_state(game)
 
-    def SkipTurn(self, request, context):
+    def DrawCards(self, request, context):
         game = _games.get(request.game_id)
         if not game:
             context.abort(grpc.StatusCode.NOT_FOUND, f"Game {request.game_id} not found")
@@ -178,8 +171,16 @@ class BeanBagServicer(game_pb2_grpc.BeanBagServicer):
         for _ in range(2):
             game._refill_if_empty(game.action_pile)
             card = game.action_pile.draw()
-            if card and len(player.hand.action_cards) < 6:
+            if card:
                 player.hand.action_cards.append(card)
+
+        _broadcast(game.id, game)
+        return _to_proto_state(game)
+
+    def SkipTurn(self, request, context):
+        game = _games.get(request.game_id)
+        if not game:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"Game {request.game_id} not found")
 
         game.pass_turn()
         _broadcast(game.id, game)
