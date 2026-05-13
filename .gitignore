@@ -1,5 +1,18 @@
 /.venv
+.DS_Store
 conftest.py
 /data
 /tests
 /scripts
+/__pycache__
+/.pytest_cache
+/docs
+instructions.md
+refactor.md
+api_plan.md
+
+
+# GRPC
+game_pb2.py
+game_pb2_grpc.py
+

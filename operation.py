@@ -6,9 +6,7 @@ Created on 12/12/25
 @author waldo
 
 """
-import cards, die
-from cards import CardStatus
-
+import die
 
 class LoseTurnException(Exception):
     def __init__(self):
@@ -96,7 +94,7 @@ class Operation(object):
             self.objective is None):
             raise InvalidOperationException
 
-        die_roll = die.Die.roll()
+        die_roll = die.Die(6).roll()
         if self.responsibility > 3:
             return_val = self.effect
         elif self.responsibility > 0:
