@@ -35,11 +35,7 @@ def start_game():
     official_game.start_game()
 
     print("Great! Let the game begin:) ")
-
-
-    # TODO: Where does turn manager get defined? 
-
-
+    
 
 if __name__ == "__main__":
     start_game()

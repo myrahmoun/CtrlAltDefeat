@@ -13,7 +13,7 @@ from player import Player
 from cards import ActionCard, ObjectiveCard
 from cards import numOfActionCards, numOfGlitchCards, numOfGlitchCards
 from die import Die
-from turn_manager import TurnManager
+# from turn_manager import TurnManager
 from enum import Enum
 
 
@@ -45,12 +45,12 @@ class Game:
         self.winner = None
 
         # Initate turn manager
-        self.turn_manager = TurnManager(self)
+        # self.turn_manager = TurnManager(self)
 
         # Initialize turn order
         self.turn_order: List[Player] = []
         self.current_turn_index: int = 0
-
+        self.turn_history: List[dict] = []
 
     # === Manage Players ===
     def add_player(self, player: Player)-> None:
@@ -72,26 +72,235 @@ class Game:
         return None
         
     # === Manage Turn Sequence ===
-    def _initialize_turn_order(self):
-        """Randomly assign a turn order for the game """
-        # Check that there some players have joined the game
-        if not self.players:
-            raise ValueError("Cannot initialize turn order: no players in game")
+    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
+        """
+        Execute a complete turn for a player.
+        
+        Args:
+            player: The player taking their turn
+            objective: The objective card being played
+            actions: List of 4 action cards (one per category)
+            die_roll: Optional die roll value (required if operation needs die roll)
+            
+        Returns:
+            dict with turn results including success, spaces_moved, etc.
+        """
+        # Check if player has lost rights to this turn
+        
+        if player.lose_next_turn:
+            player.lose_next_turn = False
+            self.skip_turn(player, reason = "lost_previous_turn")
+            return
 
-        self.turn_order = self.players 
-        random.shuffle(self.turn_order)
-        self.current_turn_index = 0
-
-        return self.turn_order
+        # Check that we have four action cards and an objective card
+        if len(actions) != 4:
+            raise ValueError(f"Need exactly 4 action cards, got {len(actions)}")
+        if not objective:
+            raise ValueError("Need one objective card, got none")
     
+
+        # Display cards on board
+        self.board.display_cards(objective, actions)
+
+        # Build and evaluate operation
+        success, bonus_applied, spaces_to_move  = self._execute_operation(player, objective, actions)
+
+        # Check if current_player won
+        if player.boardPosition >= 19:
+            self.end_game(player)
+            return
+
+        # Discard action cards
+        for card in actions:
+            self.discard_pile.add(card)
+            player.hand.action_cards.remove(card)
+
+        # Return objective card to the bottom of the objective deck
+        player.hand.objective_cards.remove(objective)
+        self.objective_pile.content.append(objective)
+        
+        # Draw replacement cards
+        # Objective
+        new_obj = self.objective_pile.draw()
+        if not new_obj:
+            raise RuntimeError("Cannot draw objective card")
+        player.hand.objective_cards.append(new_obj)
+
+        # Action - TODO: ADD OPTION TO DRAW FROM TOP OF DISCARD PILE
+        for _ in range(2):
+            self.refill_deck_if_empty(self.action_pile)
+            card = self.action_pile.draw()
+            if not card:
+                raise RuntimeError("Cannot draw action card")
+            player.hand.action_cards.append(card)
+
+        # Clear board (UI)
+        self.board.clear_card_slots()
+
+        # Log turn
+        self.turn_history.append({
+            'event': 'turn_executed',
+            'player_id': player.id,
+            'player_name': player.name,
+            'success': success,
+            'spaces_moved': spaces_to_move,
+            'final_position': player.boardPosition
+        })
+
+        # Move to next turn
+        self.next_turn()
+
+        # Can return a dict of results here (later for gRPC)
+
     def get_current_player(self) -> Player:
         """Return current player"""
         return self.turn_order[self.current_turn_index]
     
+    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
+           """
+        Execute a complete turn for a player.
+        
+        Args:
+            player: The player taking their turn
+            objective: The objective card being played
+            actions: List of 4 action cards (one per category)
+            die_roll: Optional die roll value (required if operation needs die roll)
+            
+        Returns:
+            dict with turn results including success, spaces_moved, etc.
+        """
+        # Check if player has lost rights to this turn
+        
+        if player.lose_next_turn:
+            player.lose_next_turn = False
+            self.skip_turn(player, reason = "lost_previous_turn")
+            return
+
+        # Check that we have four action cards and an objective card
+        if len(actions) != 4:
+            raise ValueError(f"Need exactly 4 action cards, got {len(actions)}")
+        if not objective:
+            raise ValueError("Need one objective card, got none")
+    
+
+        # Display cards on board
+        self.board.display_cards(objective, actions)
+
+        # Build and evaluate operation
+        success, bonus_applied, spaces_to_move  = self._execute_operation(player, objective, actions)
+
+        # Check if current_player won
+        if player.boardPosition >= 19:
+            self.end_game(player)
+            return
+
+        # Discard action cards
+        for card in actions:
+            self.discard_pile.add(card)
+            player.hand.action_cards.remove(card)
+
+        # Return objective card to the bottom of the objective deck
+        player.hand.objective_cards.remove(objective)
+        self.objective_pile.content.append(objective)
+        
+        # Draw replacement cards
+        # Objective
+        new_obj = self.objective_pile.draw()
+        if not new_obj:
+            raise RuntimeError("Cannot draw objective card")
+        player.hand.objective_cards.append(new_obj)
+
+        # Action - TODO: ADD OPTION TO DRAW FROM TOP OF DISCARD PILE
+        for _ in range(2):
+            self.refill_deck_if_empty(self.action_pile)
+            card = self.action_pile.draw()
+            if not card:
+                raise RuntimeError("Cannot draw action card")
+            player.hand.action_cards.append(card)
+
+
+        # Clear board (UI)
+        self.board.clear_card_slots()
+
+        # Log turn
+        self.turn_history.append({
+            'event': 'turn_executed',
+            'player_id': player.id,
+            'player_name': player.name,
+            'success': success,
+            'spaces_moved': spaces_to_move,
+            'final_position': player.boardPosition
+        })
+
+        # Move to next turn
+        self.next_turn()
+
+        # Can return a dict of results here (later for gRPC)
+
     def next_turn(self) -> Player:
         """Advance to next player"""
         self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
         return self.get_current_player()
+
+    def skip_turn(self, player: Player, reason: str = "timeout") -> None:
+        """
+        Skip a player's turn (e.g., due to timeout or glitch effect).
+        """
+        self.turn_history.append({
+            'event': 'turn_skipped',
+            'player_id': player.id,
+            'player_name': player.name,
+            'reason': reason
+        })
+        
+        # Move to next turn
+        self.next_turn()
+
+    def pass_turn(self, player: Player) -> None:
+        """Player voluntarily passes their turn."""
+        self.skip_turn(player, reason="passed")
+        # TODO: UPDATE STATUS OR SOMETHING TO IMPACT TURN EXEC
+        def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard])->tuple:
+        """Build an operation and evaluate it. Return (was operation successful, is a bonus applicable)"""
+
+        operation = Operation(objective)
+        for action in actions:
+            operation.add_action(action)
+        
+        try:
+            # Evaluate operation. Might raise LoseTurnException
+            spaces_to_move = operation.evaluate_op()
+            success = True
+
+            # Move Player
+            old_pos = player.boardPosition
+            new_pos = min(old_pos + spaces_to_move , 19) # Cap position at 19
+            player.boardPosition = new_pos
+
+            # Bonus (if applicable): extra space + draw two action cards
+            bonus_applied = False
+            if operation.responsibility >= 4:
+                # Move an extra space
+                new_pos = min(new_pos + 1, 19)
+                player.boardPosition = new_pos
+                bonus_applied = True
+
+                # Draw 2 extra cards
+                for _ in range(2):
+                    self.refill_deck_if_empty(self.action_pile)
+                    card = self.action_pile.draw()
+                    if card and len(player.hand.action_cards) < 6:  # Respect 6 card limit
+                        player.hand.action_cards.append(card)
+                    else:
+                        raise RuntimeError("Adding bonus card failed")
+
+        except LoseTurnException:
+            player.lose_next_turn = True # Set flag for next turn
+            success = False
+            bonus_applied = False
+            spaces_to_move = 0  
+
+        return success, bonus_applied, spaces_to_move
 
     # === Game Lifecycle ===
     def start_game(self):
@@ -133,7 +342,6 @@ class Game:
         # Set status
         self.status = GameStats.PlAYING
 
-
     def end_game(self, winner: Player) -> None:
         """Mark game as finished, set winner"""
         self.status = GameStats.FINISHED
@@ -151,6 +359,31 @@ class Game:
         return 3 <= len(self.players) <= 6 and self.status == GameStats.LOBBY
 
     # === Card Management ===
+    def refill_deck_if_empty(self, pile: CardPile) -> None:
+        """If pile empty, shuffle discard back in"""
+        if pile.is_empty():
+            if self.discard_pile.is_empty():
+                raise RuntimeError("Cannot refill deck: both deck and discard pile are empty")
+        
+            # Swap the discard pile's content into the empty pile
+            pile.content = self.discard_pile.content
+            self.discard_pile.content = []
+            # Shuffle the refilled pile
+            pile.shuffle()
+
+    # === Internal Methods ===
+    def _initialize_turn_order(self):
+        """Randomly assign a turn order for the game """
+        # Check that there some players have joined the game
+        if not self.players:
+            raise ValueError("Cannot initialize turn order: no players in game")
+
+        self.turn_order = self.players 
+        random.shuffle(self.turn_order)
+        self.current_turn_index = 0
+
+        return self.turn_order
+
     def _load_cards_from_json(self) -> None:
         """Read card definitions and populate piles"""
         
@@ -196,16 +429,3 @@ class Game:
                 )
                 objective_cards.append(card)
             self.objective_pile.load_cards(objective_cards)
-
-
-    def refill_deck_if_empty(self, pile: CardPile) -> None:
-        """If pile empty, shuffle discard back in"""
-        if pile.is_empty():
-            if self.discard_pile.is_empty():
-                raise RuntimeError("Cannot refill deck: both deck and discard pile are empty")
-        
-            # Swap the discard pile's content into the empty pile
-            pile.content = self.discard_pile.content
-            self.discard_pile.content = []
-            # Shuffle the refilled pile
-            pile.shuffle()
