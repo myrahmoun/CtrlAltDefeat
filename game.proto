@@ -4,12 +4,16 @@ package beanbag;
 
 // ── RPCs ──────────────────────────────────────────────────────────────────
 
-service BeanBag {
-  // Lobby
+service Lobby {
   rpc CreateGame (CreateGameRequest) returns (GameState);
   rpc JoinGame   (JoinRequest)       returns (JoinResponse);
   rpc StartGame  (StartRequest)      returns (GameState);
 
+  // Streaming — server pushes updates to all watchers
+  rpc WatchGame  (WatchRequest)      returns (stream GameState);
+}
+
+service BeanBag {
   // Gameplay
   rpc GetState   (StateRequest)      returns (GameState);
   rpc PlayTurn   (TurnRequest)       returns (TurnResult);
@@ -18,9 +22,6 @@ service BeanBag {
 
   rpc DrawCards  (DrawRequest)        returns (GameState);
   rpc LeaveGame  (LeaveRequest)       returns (GameState);
-
-  // Streaming — server pushes updates to all watchers
-  rpc WatchGame  (WatchRequest)      returns (stream GameState);
 }
 
 // ── Request / Response messages ───────────────────────────────────────────
