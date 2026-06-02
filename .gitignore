@@ -15,4 +15,6 @@ api_plan.md
 # GRPC
 game_pb2.py
 game_pb2_grpc.py
+basic_pb2.py
+basic_pb2_grpc.py
 
