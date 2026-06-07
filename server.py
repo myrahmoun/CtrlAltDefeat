@@ -1,6 +1,7 @@
 import grpc
 import uuid
 import queue
+import threading
 from concurrent import futures
 
 from game import Game, GameStats
@@ -12,6 +13,7 @@ import basic_pb2_grpc as pb_grpc
 # Active games and their watcher queues
 _games: dict[str, Game] = {}
 _watchers: dict[str, list[queue.Queue]] = {}
+_lock = threading.Lock()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────
@@ -70,36 +72,39 @@ def _broadcast(game_id: str, game: Game) -> pb.GameState:
 class LobbyServicer(pb_grpc.LobbyServicer):
 
     def CreateGame(self, request, context):
-        game_id = str(uuid.uuid4())[:8]
-        _games[game_id] = Game(game_id)
-        _watchers[game_id] = []
-        print(f"[server] Game created: {game_id}")
-        return _to_proto_state(_games[game_id])
+        with _lock:
+            game_id = str(uuid.uuid4())[:8]
+            _games[game_id] = Game(game_id)
+            _watchers[game_id] = []
+            print(f"[server] Game created: {game_id}")
+            return _to_proto_state(_games[game_id])
 
     def JoinGame(self, request, context):
-        game = _get_game(request.game_id, context)
-        if any(p.name == request.player_name for p in game.players):
-            context.abort(grpc.StatusCode.ALREADY_EXISTS, f"Name '{request.player_name}' is already taken")
-        player = GamePlayer(request.player_name)
-        game.players.append(player)
-        print(f"[server] {player.name} joined {game.id}")
-        return pb.JoinResponse(player_id=player.id, state=_broadcast(game.id, game))
+        with _lock:
+            game = _get_game(request.game_id, context)
+            if any(p.name == request.player_name for p in game.players):
+                context.abort(grpc.StatusCode.ALREADY_EXISTS, f"Name '{request.player_name}' is already taken")
+            player = GamePlayer(request.player_name)
+            game.players.append(player)
+            print(f"[server] {player.name} joined {game.id}")
+            return pb.JoinResponse(player_id=player.id, state=_broadcast(game.id, game))
 
     def StartGame(self, request, context):
-        game = _get_game(request.game_id, context)
-        if game.status != GameStats.LOBBY:
-            return _to_proto_state(game)
-        game.setup_game()
-        print(f"[server] Game {game.id} started")
-        return _broadcast(game.id, game)
+        with _lock:
+            game = _get_game(request.game_id, context)
+            if game.status != GameStats.LOBBY:
+                return _to_proto_state(game)
+            game.setup_game()
+            print(f"[server] Game {game.id} started")
+            return _broadcast(game.id, game)
 
     def WatchGame(self, request, context):
-        game = _get_game(request.game_id, context)
-
-        q = queue.Queue()
-        _watchers[request.game_id].append(q)
-        # Send current state immediately so the client is in sync on connect
-        q.put(_to_proto_state(game))
+        with _lock:
+            game = _get_game(request.game_id, context)
+            q = queue.Queue()
+            _watchers[request.game_id].append(q)
+            # Send current state immediately so the client is in sync on connect
+            q.put(_to_proto_state(game))
         try:
             while context.is_active():
                 try:
@@ -108,62 +113,69 @@ class LobbyServicer(pb_grpc.LobbyServicer):
                 except queue.Empty:
                     continue
         finally:
-            _watchers[request.game_id].remove(q)
+            with _lock:
+                _watchers[request.game_id].remove(q)
 
 
 class GameServicer(pb_grpc.GameServicer):
 
     def GetState(self, request, context):
-        return _to_proto_state(_get_game(request.game_id, context))
+        with _lock:
+            return _to_proto_state(_get_game(request.game_id, context))
 
     def PlayTurn(self, request, context):
-        game = _get_game(request.game_id, context)
-        player = _find_player(game, request.player_id)
-        if player.id != game.get_current_player().id:
-            context.abort(grpc.StatusCode.FAILED_PRECONDITION, "It is not your turn")
-        obj = player.hand.objective_cards[request.objective_index]
-        actions = [player.hand.action_cards[i] for i in request.action_indices]
-        result = game.execute_turn(player, obj, actions)
-        _broadcast(game.id, game)
-        if result is None:
-            # lose_next_turn path — execute_turn returns None after skipping
-            return pb.TurnResult(lose_turn=True, new_state=_to_proto_state(game))
-        return pb.TurnResult(**result, new_state=_to_proto_state(game))
+        with _lock:
+            game = _get_game(request.game_id, context)
+            player = _find_player(game, request.player_id)
+            if player.id != game.get_current_player().id:
+                context.abort(grpc.StatusCode.FAILED_PRECONDITION, "It is not your turn")
+            obj = player.hand.objective_cards[request.objective_index]
+            actions = [player.hand.action_cards[i] for i in request.action_indices]
+            result = game.execute_turn(player, obj, actions)
+            _broadcast(game.id, game)
+            if result is None:
+                # lose_next_turn path — execute_turn returns None after skipping
+                return pb.TurnResult(lose_turn=True, new_state=_to_proto_state(game))
+            return pb.TurnResult(**result, new_state=_to_proto_state(game))
 
     def DiscardCard(self, request, context):
-        game = _get_game(request.game_id, context)
-        player = _find_player(game, request.player_id)
-        try:
-            card = player.hand.action_cards[request.card_index]
-            player.hand.action_cards.remove(card)
-            game.discard_pile.add(card)
-        except IndexError:
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Invalid card index")
-        return _broadcast(game.id, game)
+        with _lock:
+            game = _get_game(request.game_id, context)
+            player = _find_player(game, request.player_id)
+            try:
+                card = player.hand.action_cards[request.card_index]
+                player.hand.action_cards.remove(card)
+                game.discard_pile.add(card)
+            except IndexError:
+                context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Invalid card index")
+            return _broadcast(game.id, game)
 
     def DrawCards(self, request, context):
-        game = _get_game(request.game_id, context)
-        player = _find_player(game, request.player_id)
-        for _ in range(2):
-            game._refill_if_empty(game.action_pile)
-            card = game.action_pile.draw()
-            if card:
-                player.hand.action_cards.append(card)
-        return _broadcast(game.id, game)
+        with _lock:
+            game = _get_game(request.game_id, context)
+            player = _find_player(game, request.player_id)
+            for _ in range(2):
+                game._refill_if_empty(game.action_pile)
+                card = game.action_pile.draw()
+                if card:
+                    player.hand.action_cards.append(card)
+            return _broadcast(game.id, game)
 
     def SkipTurn(self, request, context):
-        game = _get_game(request.game_id, context)
-        game.pass_turn()
-        return _broadcast(game.id, game)
+        with _lock:
+            game = _get_game(request.game_id, context)
+            game.pass_turn()
+            return _broadcast(game.id, game)
 
     def LeaveGame(self, request, context):
-        game = _get_game(request.game_id, context)
-        player = _find_player(game, request.player_id)
-        game.players.remove(player)
-        if player in game.turn_order:
-            game.turn_order.remove(player)
-        print(f"[server] {player.name} left {game.id}")
-        return _broadcast(game.id, game)
+        with _lock:
+            game = _get_game(request.game_id, context)
+            player = _find_player(game, request.player_id)
+            game.players.remove(player)
+            if player in game.turn_order:
+                game.turn_order.remove(player)
+            print(f"[server] {player.name} left {game.id}")
+            return _broadcast(game.id, game)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────
