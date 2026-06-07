@@ -13,14 +13,28 @@ _state_updated = threading.Event()
 
 # ── Rendering ─────────────────────────────────────────────────────────────
 
+def render_board(state: pb.GameState) -> str:
+    lines = []
+    for i in range(20):
+        players_here = []
+        for p in state.players:
+            label = p.name
+            if p.id == state.current_player_id:
+                label += "*"
+            if p.lose_next_turn:
+                label += "!"
+            if p.board_position == i:
+                players_here.append(label)
+        slot = f"[{', '.join(players_here)}]" if players_here else "[ ]"
+        lines.append(f"  {i:2d}: {slot}")
+    lines.append("  (* current turn   ! loses next turn)")
+    return "\n".join(lines)
+
+
 def render_state(state: pb.GameState) -> None:
     print(f"\n{'='*50}")
     print(f"Game: {state.game_id}  |  Status: {state.status}")
-    print("Board positions:")
-    for p in state.players:
-        marker = " <-- current" if p.id == state.current_player_id else ""
-        turn_warning = " (loses next turn)" if p.lose_next_turn else ""
-        print(f"  {p.name}: {p.board_position}/19{marker}{turn_warning}")
+    print(render_board(state))
     if state.winner_id:
         winner = next((p for p in state.players if p.id == state.winner_id), None)
         if winner:
@@ -94,10 +108,10 @@ def prompt_discard(game_stub, game_id, player_id, state):
 
 # ── Background watcher ────────────────────────────────────────────────────
 
-def watch_loop(lobby_stub, game_id) -> None:
+def watch_loop(lobby_stub, game_id, player_id) -> None:
     """Runs in a background thread — re-renders the board on every server push."""
     try:
-        for state in lobby_stub.WatchGame(pb.WatchRequest(game_id=game_id)):
+        for state in lobby_stub.WatchGame(pb.WatchRequest(game_id=game_id, player_id=player_id)):
             with _my_turn:
                 render_state(state)
             _state_updated.set()
@@ -130,7 +144,7 @@ def main():
         except grpc.RpcError as e:
             print(f"Couldn't join: {e.details()}")
 
-    threading.Thread(target=watch_loop, args=(lobby_stub, game_id), daemon=True).start()
+    threading.Thread(target=watch_loop, args=(lobby_stub, game_id, player_id), daemon=True).start()
 
     while True:
         input("\nPress Enter when all players have joined to start the game...")
@@ -214,6 +228,11 @@ def main():
             print(f"Error: {e.details()}")
             continue
 
+        if result.new_state.status == "finished":
+            winner = next((p for p in result.new_state.players if p.id == result.new_state.winner_id), None)
+            print(f"\n*** {winner.name} wins! ***" if winner else "\n*** Game over! ***")
+            break
+
         # Print outcome
         if result.lose_turn:
             print(f"Operation failed! R:{result.responsibility} — going offline next turn.")
@@ -227,12 +246,6 @@ def main():
 
         # Discard if bonus draw pushed hand over 6
         prompt_discard(game_stub, game_id, player_id, result.new_state)
-
-        if result.new_state.status == "finished":
-            print("Game over.")
-            break
-
-    game_stub.LeaveGame(pb.LeaveRequest(game_id=game_id, player_id=player_id))
 
 
 if __name__ == "__main__":

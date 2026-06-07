@@ -115,6 +115,12 @@ class LobbyServicer(pb_grpc.LobbyServicer):
         finally:
             with _lock:
                 _watchers[request.game_id].remove(q)
+                game = _games.get(request.game_id)
+                if (game and game.status == GameStats.PLAYING
+                        and game.get_current_player().id == request.player_id):
+                    game.pass_turn()
+                    _broadcast(request.game_id, game)
+                    print(f"[server] {request.player_id} disconnected — turn auto-skipped")
 
 
 class GameServicer(pb_grpc.GameServicer):
@@ -134,7 +140,8 @@ class GameServicer(pb_grpc.GameServicer):
             result = game.execute_turn(player, obj, actions)
             _broadcast(game.id, game)
             if result is None:
-                # lose_next_turn path — execute_turn returns None after skipping
+                if game.status == GameStats.FINISHED:
+                    return pb.TurnResult(success=True, new_state=_to_proto_state(game))
                 return pb.TurnResult(lose_turn=True, new_state=_to_proto_state(game))
             return pb.TurnResult(**result, new_state=_to_proto_state(game))
 

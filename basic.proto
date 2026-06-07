@@ -75,7 +75,8 @@ message SkipRequest {
 }
 
 message WatchRequest {
-  string game_id = 1;
+  string game_id   = 1;
+  string player_id = 2;
 }
 
 message DrawRequest {
