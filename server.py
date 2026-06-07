@@ -44,7 +44,7 @@ def _to_proto_state(game: Game) -> pb.GameState:
         players=[pb.Player(
             id=p.id,
             name=p.name,
-            board_position=p.boardPosition,
+            board_position=p.board_position,
             lose_next_turn=p.lose_next_turn,
             hand=pb.Hand(
                 action_cards=[pb.ActionCard(

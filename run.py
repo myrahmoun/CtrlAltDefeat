@@ -71,7 +71,7 @@ def main():
         player = game.get_current_player()
 
         print(f"\n{'='*50}")
-        print(f"Turn {turn} — {player.name} (position {player.boardPosition}/19)")
+        print(f"Turn {turn} — {player.name} (position {player.board_position}/19)")
         print(game.board.get_visual_board(game.players))
 
         if player.lose_next_turn:
@@ -117,7 +117,7 @@ def main():
                     else:
                         moved = result['spaces_moved'] + (1 if result['bonus'] else 0)
                         bonus_str = " (+1 bonus, drew 2 cards)" if result['bonus'] else ""
-                        print(f"Success! R:{r}, E:{e} — moved {moved} space(s){bonus_str}. Now at {player.boardPosition}.")
+                        print(f"Success! R:{r}, E:{e} — moved {moved} space(s){bonus_str}. Now at {player.board_position}.")
 
             # Enforce 6-card max after bonus draw
             while len(player.hand.action_cards) > 6:
@@ -133,7 +133,7 @@ def main():
 
         if game.winner:
             print(f"\n{'='*50}")
-            print(f"{game.winner.name} wins! (position {game.winner.boardPosition})")
+            print(f"{game.winner.name} wins! (position {game.winner.board_position})")
             break
 
         input("\nPress Enter for next turn...")

@@ -126,7 +126,7 @@ class Game():
         result = self._execute_operation(player, objective, actions)
 
         # Detect win
-        if player.boardPosition >= 19:
+        if player.board_position >= 19:
             self.end_game(player)
             return
 
@@ -163,12 +163,12 @@ class Game():
 
         try:
             spaces_to_move = operation.evaluate_op()
-            player.boardPosition = min(player.boardPosition + spaces_to_move, 19)
+            player.board_position = min(player.board_position + spaces_to_move, 19)
             result['success'] = True
             result['spaces_moved'] = spaces_to_move
 
             if operation.responsibility >= 4:
-                player.boardPosition = min(player.boardPosition + 1, 19)
+                player.board_position = min(player.board_position + 1, 19)
                 result['bonus'] = True
                 for _ in range(2):
                     self._refill_if_empty(self.action_pile)

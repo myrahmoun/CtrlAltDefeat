@@ -37,7 +37,7 @@ class Board:
         board_str = "Board:\n"
         for i in range(20):
             # Find players at this position
-            players_here = [p.name for p in players if p.boardPosition == i]
+            players_here = [p.name for p in players if p.board_position == i]
             if players_here:
                 board_str += f"  {i:2d}: [{', '.join(players_here)}]\n"
             else:

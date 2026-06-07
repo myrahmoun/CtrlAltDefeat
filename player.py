@@ -23,12 +23,12 @@ class Player:
         self.name = name
         self.role = role
         self.hand = cards.Hand()
-        self.boardPosition = 0 # number between 0 and 19
+        self.board_position = 0
         self.lose_next_turn = False  # Flag for skip turn penalty
         self.playerStatus = "waiting"
 
     def __repr__(self)->str:
             return (
                 f"Player(id={self.id}, name={self.name}, role={self.role}, "
-                f"boardPosition={self.boardPosition}, status={self.playerStatus})"
+                f"board_position={self.board_position}, status={self.playerStatus})"
                 )
