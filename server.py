@@ -161,11 +161,7 @@ class GameServicer(pb_grpc.GameServicer):
         with _lock:
             game = _get_game(request.game_id, context)
             player = _find_player(game, request.player_id)
-            for _ in range(2):
-                game._refill_if_empty(game.action_pile)
-                card = game.action_pile.draw()
-                if card:
-                    player.hand.action_cards.append(card)
+            game.draw_cards(player, 2)
             return _broadcast(game.id, game)
 
     def SkipTurn(self, request, context):

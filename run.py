@@ -78,12 +78,7 @@ def main():
             print(f"{player.name} lost their turn!")
             game.execute_turn(player, None, [])
         else:
-            # Draw 2 cards at start of turn
-            for _ in range(2):
-                game._refill_if_empty(game.action_pile)
-                card = game.action_pile.draw()
-                if card:
-                    player.hand.action_cards.append(card)
+            game.draw_cards(player, 2)
 
             # Enforce 6-card max before player decides
             while len(player.hand.action_cards) > 6:

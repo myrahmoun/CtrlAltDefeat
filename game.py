@@ -170,11 +170,7 @@ class Game():
             if operation.responsibility >= 4:
                 player.board_position = min(player.board_position + 1, 19)
                 result['bonus'] = True
-                for _ in range(2):
-                    self._refill_if_empty(self.action_pile)
-                    card = self.action_pile.draw()
-                    if card and len(player.hand.action_cards) < 6:
-                        player.hand.action_cards.append(card)
+                self.draw_cards(player, 2)
 
         except LoseTurnException:
             player.lose_next_turn = True
@@ -189,6 +185,13 @@ class Game():
             pile.content = self.discard_pile.content
             self.discard_pile.content = []
             pile.shuffle()
+
+    def draw_cards(self, player: Player, count: int = 2) -> None:
+        for _ in range(count):
+            self._refill_if_empty(self.action_pile)
+            card = self.action_pile.draw()
+            if card and len(player.hand.action_cards) < 6:
+                player.hand.action_cards.append(card)
 
     def end_game(self, winner: Player) -> None:
         self.status = GameStats.FINISHED
