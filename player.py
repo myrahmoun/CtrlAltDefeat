@@ -6,7 +6,7 @@ Player Parameters:
         - "adversary"
         - "agent"
     - hand: the hand of the player with 4 action cards and 2 objective cards
-    - boardPosition: the position of the player on the board, also their score. 
+    - board_position: the position of the player on the board, also their score.
     - playerStatus: the status of the player
         - "waiting"
         - "playing"
