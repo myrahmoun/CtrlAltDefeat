@@ -1,7 +1,7 @@
 import grpc
 import threading
-import game_pb2
-import game_pb2_grpc
+import basic_pb2 as pb
+import basic_pb2_grpc as pb_grpc
 
 REQUIRED_CATEGORIES = {'Intelligence', 'Technology', 'Governance', 'Cybersecurity'}
 
@@ -11,7 +11,7 @@ _my_turn = threading.Lock()
 
 # ── Rendering ─────────────────────────────────────────────────────────────
 
-def render_state(state: game_pb2.GameState) -> None:
+def render_state(state: pb.GameState) -> None:
     print(f"\n{'='*50}")
     print(f"Game: {state.game_id}  |  Status: {state.status}")
     print("Board positions:")
@@ -25,7 +25,7 @@ def render_state(state: game_pb2.GameState) -> None:
             print(f"\n*** {winner.name} wins! ***")
 
 
-def show_hand(player: game_pb2.Player) -> None:
+def show_hand(player: pb.Player) -> None:
     print(f"\n--- {player.name}'s hand ---")
     print("Objectives:")
     for i, c in enumerate(player.hand.objective_cards):
@@ -37,7 +37,7 @@ def show_hand(player: game_pb2.Player) -> None:
 
 # ── Input helpers ─────────────────────────────────────────────────────────
 
-def prompt_card_selection(player: game_pb2.Player):
+def prompt_card_selection(player: pb.Player):
     """Ask the player to pick 1 objective + 4 action cards. Returns (obj_idx, action_idxs) or None."""
     print("(or type 'back' to cancel)")
     while True:
@@ -71,7 +71,7 @@ def prompt_card_selection(player: game_pb2.Player):
             print("Invalid input. Example: 0 0 1 2 3")
 
 
-def prompt_discard(stub, game_id, player_id, state):
+def prompt_discard(game_stub, game_id, player_id, state):
     """Keep prompting the player to discard until hand is <= 6 cards."""
     me = next((p for p in state.players if p.id == player_id), None)
     while me and len(me.hand.action_cards) > 6:
@@ -79,7 +79,7 @@ def prompt_discard(stub, game_id, player_id, state):
         print(f"\nYou have {len(me.hand.action_cards)} cards — discard down to 6.")
         try:
             idx = int(input("Discard card at index: "))
-            state = stub.DiscardCard(game_pb2.DiscardRequest(
+            state = game_stub.DiscardCard(pb.DiscardRequest(
                 game_id=game_id,
                 player_id=player_id,
                 card_index=idx,
@@ -92,10 +92,10 @@ def prompt_discard(stub, game_id, player_id, state):
 
 # ── Background watcher ────────────────────────────────────────────────────
 
-def watch_loop(stub, game_id) -> None:
+def watch_loop(lobby_stub, game_id) -> None:
     """Runs in a background thread — re-renders the board on every server push."""
     try:
-        for state in stub.WatchGame(game_pb2.WatchRequest(game_id=game_id)):
+        for state in lobby_stub.WatchGame(pb.WatchRequest(game_id=game_id)):
             with _my_turn:
                 render_state(state)
     except grpc.RpcError:
@@ -106,31 +106,33 @@ def watch_loop(stub, game_id) -> None:
 
 def main():
     addr = input("Server address (In demo use localhost:50051): ").strip()
-    stub = game_pb2_grpc.BeanBagStub(grpc.insecure_channel(addr))
+    channel = grpc.insecure_channel(addr)
+    lobby_stub = pb_grpc.LobbyStub(channel)
+    game_stub = pb_grpc.GameStub(channel)
 
     # Lobby: create or join a game
     game_id = input("Game ID to join (or press Enter to create a new game): ").strip()
     if not game_id:
-        state = stub.CreateGame(game_pb2.CreateGameRequest())
+        state = lobby_stub.CreateGame(pb.CreateGameRequest())
         game_id = state.game_id
         print(f"Created game: {game_id}  — share this ID with other players")
 
     while True:
         name = input("Your name: ").strip()
         try:
-            join_resp = stub.JoinGame(game_pb2.JoinRequest(game_id=game_id, player_name=name))
+            join_resp = lobby_stub.JoinGame(pb.JoinRequest(game_id=game_id, player_name=name))
             player_id = join_resp.player_id
             print(f"Joined as {name}")
             break
         except grpc.RpcError as e:
             print(f"Couldn't join: {e.details()}")
 
-    threading.Thread(target=watch_loop, args=(stub, game_id), daemon=True).start()
+    threading.Thread(target=watch_loop, args=(lobby_stub, game_id), daemon=True).start()
 
     while True:
         input("\nPress Enter when all players have joined to start the game...")
         try:
-            stub.StartGame(game_pb2.StartRequest(game_id=game_id))
+            lobby_stub.StartGame(pb.StartRequest(game_id=game_id))
             break
         except grpc.RpcError as e:
             print(f"Can't start yet: {e.details()}")
@@ -138,7 +140,7 @@ def main():
     # Game loop
     first_turn = True
     while True:
-        state = stub.GetState(game_pb2.StateRequest(game_id=game_id))
+        state = game_stub.GetState(pb.StateRequest(game_id=game_id))
 
         if state.status == "finished":
             print("Game over.")
@@ -154,16 +156,16 @@ def main():
 
             if me.lose_next_turn:
                 print("You lost your turn!")
-                stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
+                game_stub.SkipTurn(pb.SkipRequest(game_id=game_id, player_id=player_id))
                 continue
 
             # Draw 2 cards (skip on first turn — hand is already dealt)
             if not first_turn:
-                state = stub.DrawCards(game_pb2.DrawRequest(game_id=game_id, player_id=player_id))
+                state = game_stub.DrawCards(pb.DrawRequest(game_id=game_id, player_id=player_id))
                 me = next(p for p in state.players if p.id == player_id)
                 if len(me.hand.action_cards) > 6:
                     print(f"\nYou drew 2 cards and now have {len(me.hand.action_cards)} — discard down to 6.")
-                    state = prompt_discard(stub, game_id, player_id, state)
+                    state = prompt_discard(game_stub, game_id, player_id, state)
                     me = next(p for p in state.players if p.id == player_id)
             first_turn = False
 
@@ -174,18 +176,18 @@ def main():
                 action = input("\n(p)lay, (s)kip, (d)iscard, or (q)uit? ").strip().lower()
 
                 if action == 'q':
-                    stub.LeaveGame(game_pb2.LeaveRequest(game_id=game_id, player_id=player_id))
+                    game_stub.LeaveGame(pb.LeaveRequest(game_id=game_id, player_id=player_id))
                     print("You left the game.")
                     return
 
                 if action == 's':
-                    stub.SkipTurn(game_pb2.SkipRequest(game_id=game_id, player_id=player_id))
+                    game_stub.SkipTurn(pb.SkipRequest(game_id=game_id, player_id=player_id))
                     break
 
                 if action == 'd':
                     try:
                         idx = int(input("Discard card at index: "))
-                        state = stub.DiscardCard(game_pb2.DiscardRequest(
+                        state = game_stub.DiscardCard(pb.DiscardRequest(
                             game_id=game_id, player_id=player_id, card_index=idx
                         ))
                         me = next(p for p in state.players if p.id == player_id)
@@ -200,7 +202,7 @@ def main():
 
         obj_idx, action_idxs = selection
         try:
-            result = stub.PlayTurn(game_pb2.TurnRequest(
+            result = game_stub.PlayTurn(pb.TurnRequest(
                 game_id=game_id, player_id=player_id,
                 objective_index=obj_idx, action_indices=action_idxs,
             ))
@@ -220,13 +222,13 @@ def main():
             print(f"Success! R:{result.responsibility}, E:{result.effect} — moved {moved} space(s){bonus_str}. Now at {me_updated.board_position}.")
 
         # Discard if bonus draw pushed hand over 6
-        prompt_discard(stub, game_id, player_id, result.new_state)
+        prompt_discard(game_stub, game_id, player_id, result.new_state)
 
         if result.new_state.status == "finished":
             print("Game over.")
             break
 
-    stub.LeaveGame(game_pb2.LeaveRequest(game_id=game_id, player_id=player_id))
+    game_stub.LeaveGame(pb.LeaveRequest(game_id=game_id, player_id=player_id))
 
 
 if __name__ == "__main__":
