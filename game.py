@@ -13,8 +13,8 @@ from operation import Operation, LoseTurnException
 
 
 # Game files
-ACTION_CARDS_FILE = Path("data/action_cards.json")
-OBJECTIVE_CARDS_FILE = Path("data/objective_cards.json")
+ACTION_CARDS_FILE = Path(__file__).parent / "data" / "action_cards.json"
+OBJECTIVE_CARDS_FILE = Path(__file__).parent / "data" / "objective_cards.json"
 
 class GameStats(Enum):
     LOBBY = 1
