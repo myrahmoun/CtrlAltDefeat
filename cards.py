@@ -23,9 +23,6 @@ Parameters:
         - etc. we can extend this! `
 '''
 
-actionCards, objectiveCards, glitchCards = [], [], []
-numOfActionCards, numOfObjectiveCards, numOfGlitchCards = 0, 0, 0
-
 from enum import Enum
 
 class CardStatus(Enum):
@@ -57,9 +54,6 @@ class ActionCard:
         self.effect = effect
         self.cardStatus = CardStatus.IN_ACTIONPILE
 
-        # numOfActionCards += 1
-        actionCards.append(self)
-
     def __repr__(self):
         return f"ActionCard(name={self.name}, description={self.description}, category={self.category}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
 
@@ -77,9 +71,6 @@ class ObjectiveCard:
         self.effect = effect
         self.cardStatus = CardStatus.IN_OBJECTIVE_PILE
 
-        # numOfObjectiveCards += 1
-        objectiveCards.append(self)
-
     def __repr__(self):
         return f"ObjectiveCard(name={self.name}, description={self.description}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
 
@@ -94,9 +85,6 @@ class GlitchCard:
         self.description = description
         self.glitchType = glitchType
         self.cardStatus = CardStatus.IN_ACTIONPILE
-
-        # numOfGlitchCards += 1
-        glitchCards.append(self)
 
     def __repr__(self):
         return f"GlitchCard(name={self.name}, description={self.description}, glitch={self.glitchType}, status={self.cardStatus})"
