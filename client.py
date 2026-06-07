@@ -7,6 +7,8 @@ REQUIRED_CATEGORIES = {'Intelligence', 'Technology', 'Governance', 'Cybersecurit
 
 # Held by the main thread during interactive prompts to silence the watcher
 _my_turn = threading.Lock()
+# Set by the watcher whenever the server pushes a new state
+_state_updated = threading.Event()
 
 
 # ── Rendering ─────────────────────────────────────────────────────────────
@@ -98,6 +100,7 @@ def watch_loop(lobby_stub, game_id) -> None:
         for state in lobby_stub.WatchGame(pb.WatchRequest(game_id=game_id)):
             with _my_turn:
                 render_state(state)
+            _state_updated.set()
     except grpc.RpcError:
         pass  # server closed or game ended
 
@@ -147,7 +150,8 @@ def main():
             break
 
         if state.current_player_id != player_id:
-            input("\nWaiting for your turn — press Enter to refresh...")
+            _state_updated.wait()
+            _state_updated.clear()
             continue
 
         with _my_turn:
