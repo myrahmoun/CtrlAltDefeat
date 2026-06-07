@@ -7,6 +7,7 @@ Created on 12/12/25
 
 """
 import die
+import cards
 
 class LoseTurnException(Exception):
     def __init__(self):
@@ -33,19 +34,19 @@ class Operation(object):
         that card; otherwise return None.
         '''
         return_v = None
-        if  action.category == cards.CardCategory.Intelligence:
+        if  action.category == cards.CardCategory.INTELLIGENCE:
             if self.intell is not None:
                 return_v = self.intell
             self.intell = action
-        elif action.category == cards.CardCategory.Technology:
+        elif action.category == cards.CardCategory.TECHNOLOGY:
             if self.tech is not None:
                 return_v = self.tech
             self.tech = action
-        elif action.category == cards.CardCategory.Governance:
+        elif action.category == cards.CardCategory.GOVERNANCE:
             if self.govern is not None:
                 return_v = self.govern
             self.govern = action
-        elif action.category == cards.CardCategory.Cybersecurity:
+        elif action.category == cards.CardCategory.CYBERSECURITY:
             if self.cyber is not None:
                 return_v = self.cyber
             self.cyber = action
@@ -66,16 +67,16 @@ class Operation(object):
         Return the removed card, or None if there was no card of that category.
         '''
         return_v = None
-        if action.category == cards.CardCategory.Intelligence:
+        if action.category == cards.CardCategory.INTELLIGENCE:
             return_v = self.intell
             self.intell = None
-        elif action.category == cards.CardCategory.Technology:
+        elif action.category == cards.CardCategory.TECHNOLOGY:
             return_v = self.tech
             self.tech = None
-        elif action.category == cards.CardCategory.Governance:
+        elif action.category == cards.CardCategory.GOVERNANCE:
             return_v = self.govern
             self.govern = None
-        elif action.category == cards.CardCategory.Cybersecurity:
+        elif action.category == cards.CardCategory.CYBERSECURITY:
             return_v = self.cyber
             self.cyber = None
         else:

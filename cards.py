@@ -36,7 +36,7 @@ class CardStatus(Enum):
     IN_PLAY = "in_play"
     IN_DISCARD_PILE = "in_discard_pile"
 
-class CardCategory(Enum):
+class CardCategory(str, Enum):
     CYBERSECURITY = "Cybersecurity"
     GOVERNANCE = "Governance"
     TECHNOLOGY = "Technology"
