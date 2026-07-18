@@ -1,0 +1,61 @@
+Category,name,description,effect,responsibility,Glitch Effect,Count
+Governance,National Secuity Council,"Your operation follows National Security Council priorities, and therefore reacts to the most dangerous threats to the country, allowing you to focus on the correct targets",0,1,,
+Technology,Technology Degredation,"Hardware and software can sometimes be interfered with to behave in a degraded manner, reducing useer' trust in their systems",2,1,,
+Glitch,Technology Fails,"In testing, you find that a capability being developed for your operation does not behave as expected.",,,Discard 1 Technology card,
+Cyber Intervention,Network Attack,"Attack the computer network of your target, stopping them from conducting their operations.",2,-1,,3
+Intelligence,Public Records,"Public records can contain vital intelligence, if you look closely enough.",0,1,,2
+Cyber Intervention,data Encruption,"Encrypt your target's data, stopping them from gaining access to critical systems",1,0,,
+Technology,Email Spoofing,It is sometimes possible to send an email to a target crafted to look as if it came from somebody else,0,0,,
+Intelligence,Technical Reconnaisssance,"Covert technical access to a target's network increases understanding, making operations more precise and calibrated",2,1,,3
+Governance,Values and Ethics,Your operations follow the principles of responsible behavior in cyberspace set out in Responsible Cybeer Power in Practice,1,1,,3
+Glitch,Approval Delay,Your operation is held back at the approval stage,,,You cannot complete an operation this turn,
+Glitch,Com0romise,Your ways of working have been exposed by another operation that went wrong,,,Discard 1 Technology Card,
+Governance,Ministerial Approval,Your opeation is accountable to the Secretary of State and the Secretary of Defense,0,1,,2
+Glitch,Legislative Change,You need time to understand the impact of recent legislative changes on your activities and policies,,,Discard 1 Governance Card,
+Cyber Intervention,Intelligence Release,Obtain intelligence from your target and release it to the world,1,-1,,2
+Technology,Reverse Engineering,"With access to harware or software used by a target, it can be reverse engineered to find bespoke vulnerabilities",3,1,,
+Intelligence,Open Source Scanning,"Scan across the internet for servers, Internet of Things devices and industrial controllers",1,1,,3
+Glitch,International Agreement Published,The government porvides clarity on the nations cyber effects policy position,,,Draw 2 Action Cards,2
+Governance,Legal Authority,Your operation is carried out in accordance with both domestic and international law,0,2,,2
+Technology,Access to Data,"By targeting data stores, it is possible to obtain a target's private information, or otherwise correupt it",1,1,,
+Intelligence,Agent Recruitment,"Recruiting an agent withing an organisation allows you to understand more about the target, increasing effectiveness and recuding the risk of unintended consequences",1,2,,2
+Technology,Covert Influence,Covert techniques can be used to reach out to an individual who poses a significant threat and seek to influence their actions ina positive way,1,1,,
+Governance,Learning Culture,"Your team share best practices to learn from experience, meaning that your operation is designed to be as effetive and responsible as it can be",1,1,,
+Technology,Credential Theft,"By obtaining the credentials of a target user, it is possible to log in as them",3,1,,
+Intelligence,Signals Intelligence,"Intellegence agencies routinely collect intelligence through the internet to protect national security, detect and prevent serious crime, and preserve economic wellbeing",2,1,,4
+Governance,Independent Oversight," Your operation is overseen by the independent office of the Investigatory Powers Commissioner, ensuring your operation meets the UK’s commitment to acting responsibly in cyberspace.",0,1,,2
+Technology,Kill Switch,"Hostile malware sometimes has a secret function which disables it, if it can be found.",3,1,,
+Cyber Intervention,CNI Attack,"Disrupt a pipeline which supplies your target with fuel, temporarily stopping their operations.",2,-2,,2
+Technology,Default Passwords,"The target has not set strong passwords on their key systems, allowing easy login and control. Default passwords are freely! available on the internet.",0,0,,
+Governance,Cautious,A cautious and hesitant government means that your ability to operate may be constrained or limited.,-2,1,,2
+Governance,Questionable Values and Ethics,You carry out your cyber activities with little regard for wider consequences.,0,-2,,3
+Governance,Lack of Oversight,"You operate independently, with no oversight from independent democratic bodies.",0,-2,,2
+Cyber Intervention,Counter Propaganda,Use your online skills to stop your target’s propaganda.,1,1,,
+Technology,Internet of Things Device Attack,"A target’s loT devices, such as home appliances, are often insecure and can be compromised easily.",1,1,,
+Cyber Intervention,Socail Media Botnet,Spread your desired message to a target through a series of fake accounts on social media.,2,-1,,2
+Technology,Manipulaltion of Data,"Target individuals and groups rely on data to make decisions. By targeting their storage, transmission and processing of data, it is possible to interfere with decision making.",1,1,,
+Intelligence,Communications Intercept,"By compromising the servers of target communications providers, it is possible to intercept messages.",2,0,,3
+Cyber Intervention,CNI Pre-positioning,"Gain access to a critical system of your target, ready to respond to any attacks by them.",1,0,,
+Technology,Backdoor,Backdoors in software allow you to run code or install other software that users are not aware of.,2,0,,
+Intelligence,Partners,Working with international and other government partners increases the amount of knowledge available on a target.,1,2,,3
+Cyber Intervention,Data Manipulation,Hack into your target’s systems and change the data inside. ,1,-1,,
+Technology,Disrupting Communication Devices,Interfering with communication devices can result in a target not being able to communicate with their accomplices.,1,0,,
+Cyber Intervention,Software Supply Chain Attack,"Gain access into a company supplying software to your target, then launch operations from there.",2,-1,,
+Technology,Digital Communications Systems Disruption,"Some digital communications systems are susceptible to cyber attack, which can render them degraded or inoperable.",2,1,,
+Glitch ,Operation Review,A member of staff raises an issue with your operation at the planning stage which you need to rectify.,,,You cannot complete an operation this turn,
+Glitch,Disclose a Zero Day Exploit,Your equities board decides you must reveal your zero day exploit to keep others safe.,,,Discard 1 Technology card,
+Governance,Parliamentary Scrutiny,The Intelligence and Security Committee of the UK’s Parliament is accountable for overseeing the conduct of your cyber operation.,0,1,,
+Technology,Hardware Supply Chain Attack,"By modifying technology before it is delivered to a target, it is possible to add functionality the end user is not aware of.",2,1,,
+Glitch,Resource Reshuffle,Resources are reassigned in your favour.,,,Draw 2 Action Cards,
+Cyber Intervention,Industrial Attack,Hack into the control systems of a target factory and cause damage to the production line.,2,-2,,2
+Cyber Intervention,Information Release,Find information about your target and release it on the internet.,1,-1,,
+Glitch,Resource Reshuffle,Resources are reassigned due to a crisis event.,,,Discard 1 Action Card,
+Technology,Online Influence,Online engagement can be used to reach out to an individual who poses a significant threat and seek to influence their actions in a positive way.,1,1,,
+Technology,Zero Day,"A previously undocumented vulnerability. Using it is effective, although it could be exploited by other less responsible actors in the future.",3,0,,
+Technology,Clandestine Technology,Air-gapped or hardened networks can be accessed by installing bespoke technology on the network using clandestine techniques.,3,1,,
+Glitch,Budget Increase,A recent spending increase from the government speeds up your development work.,,,Draw 2 Action Cards,
+Technology,Code Injection,Some websites or services will run any code that is passed in by a user. This can be used to compromise or break a target system.,2,1,,
+Cyber Intervention,Information Release,Break into your target’s emails and release them to journalists.,2,0,,
+Cyber Intervention,Denial of Service,Overwhelm a target system with vast amounts of specially created internet traffic.,1,-1,,
+Governance,Risk Management,A strong risk management framework minimises the likelihood of unintended consequences and increases precision.,1,1,,
+Glitch,Keep a Zero Day Exploit,Your equities board decides you can keep your zero day exploit a secret.,,,Draw 2 Action Cards,

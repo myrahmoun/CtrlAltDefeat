@@ -1,0 +1,40 @@
+INTELLIGENCE Open Source Scanning Scan across the internet for servers, Internet of Things devices and industrial controllers. Effective Responsible et
+
+TECHNOLOGY Brute Force Attack By automatically trying multiple username and password combinations, it may be possible to access a target system. Effective La] Responsible Dia
+
+GOVERNANCE Questionable Values and Ethics You carry out your cyber activities with little regard for wider consequences. Effective o Responsible .-2)
+
+CYBER INTERVENTION Ransomware Attack Encrypt your target’s data, then demand payment to release it. Effective a Responsible © |
+
+TECHNOLOGY Manipulation of Data Target individuals and groups rely on data to make decisions. By targeting their storage, transmission and processing of data, it is possible to interfere with decision making. Effective ua Responsible ri)
+
+CYBER INTERVENTION Data Manipulation Hack into your target’s systems and change the data inside. Effective Responsible a ©
+
+TECHNO Network Attack The core routers and switches at the centre of a network can be vulnerable, allowing complete access to the network. Effective Q Responsible >
+
+INTELLIGENCE Communications Interception By compromising the servers of target communications providers, it is possible to intercept messages. Effective Bo Responsible ©
+
+GOVERNANCE Independent Oversight Your operation is overseen by the independent office of the Investigatory Powers Commissioner, ensuring your operation meets the UK’s commitment to acting responsibly in cyberspace. Effective Responsible
+
+CYBER INTERVENTION CNI Pre-positioning Gain access to a critical system of your target, ready to respond to any attacks by them. Effective | Responsible ©
+
+GOVERNANCE Lack of Oversight You operate independently, with no oversight from independent democratic bodies. Effective o Responsible ©
+
+TECHNOLOGY Backdoor Backdoors in software allow you to run code or install other software that users are not aware of. Effective 2 Responsible 0
+
+INTELLIGENCE Technical Reconnaissance Covert technical access to a target’s network increases understanding, making operations more precise and calibrated. Effective ra] Responsible a
+
+INTELLIGENCE Partners Working with international and other government partners increases the amount of knowledge available on a target. Effective Responsible 2]
+
+INTELLIGENCE Partners Working with international and other government partners increases the amount of knowledge available on a target. Effective Responsible (29
+
+INTELLIGENCE Signals Intelligence Intelligence agencies routinely collect intelligence through the internet to protect national security, detect and prevent serious crime, and preserve economic wellbeing. | Effective Responsible
+
+INTELLIGENCE Technical Reconnaissance Covert technical access to a target’s network increases understanding, making operations more precise and calibrated. Effective Responsible
+
+CYBER INTERVENTION Data Manipulation Hack into your target’s systems and change the data inside. Effective Responsible
+
+CYBER INTERVENTION Social Media Botnet Spread your desired message to a target through a series of fake accounts on social media. Effective 2 | Responsible 1)
+
+TECHNOLOGY Disrupting Communication Devices Interfering with communication devices can result in a target not being able to communicate with their accomplices. Effective @ Responsible 0
+

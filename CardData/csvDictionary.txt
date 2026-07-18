@@ -1,0 +1,17 @@
+The two .csv files are in the same folder contain the data for the playing cards.
+
+The actionCards.csv file contains all the data for the action cards, including the glitch cards.
+Each line contains the Category name for the card, followed by the name of the particular card,
+followed by the long description. For other than glitch cards, this is followed by the effect
+value and the responsibility value. If the card is a glitch card, the effect and responsibility values
+are blank, but there is a glitch effect field (which is text). This field is blank for other cards.
+Finally, there is a count value, which if not blank is the number of copies of the card in the deck.
+
+The objectivesCards.csv file contains all the data for the objective cards. The first field is
+the name of the objective, follwed by a text description. The next field is the effect, followed
+by the responsibility score. Finally, there is a count value which, if not blank, indicates the
+number of copies of the objective in the deck.
+
+The card*.pdf files contain scanned images of the cards, which were used as input to the program
+extractFromPdf.py which extracted the text from the images (it was particularly bad at extracting
+the responsibility values from the images. The text extracted is in the corresponding .txt file.

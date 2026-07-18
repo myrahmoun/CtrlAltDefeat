@@ -1,0 +1,32 @@
+INTELLIGENCE Open Source Scanning Scan across the internet for servers, Internet of Things devices and industrial controllers. Effective 1 | @ Responsible
+
+CYBER INTERVENTION Industrial Attack Hack into the control systems of a target factory and cause damage to the production line. Effective 2 Responsible .-2)
+
+GOVERNANCE Questionable Values and Ethics You carry out your cyber activities with little regard for wider consequences. Effective 0 | Responsible &
+
+TECHNOLOGY Zero Day A previously undocumented vulnerability. Using it is effective, although it could be exploited by other less responsible actors in the future. Effective | Responsible fo}
+
+TECHNOLOGY Clandestine Technology Air-gapped or hardened networks can be accessed by installing bespoke technology on the network using clandestine techniques. Effective 13 | Responsible oe
+
+INTELLIGENCE Communications Interception By compromising the servers of target communications providers, it is possible to intercept messages. Effective 2 | Responsible ©
+
+GOVERNANCE Ministerial Approval Your operation is accountable to the Secretary of State for Foreign, Commonwealth and Development Affairs, and the Secretary of State for Defence. Effective o Responsible &
+
+INTELLIGENCE Partners Working with international and other government partners increases the amount of knowledge available on a target. Effective Responsible C2)
+
+GLITCH Budget Increase A recent spending increase from the government speeds up your development work. Action Cards
+
+INTELLIGENCE Signals Intelligence Intelligence agencies routinely collect intelligence through the internet to protect national security, detect and prevent serious crime, and preserve economic wellbeing. Effective Responsible
+
+TECHNOLOGY Code Injection Some websites or services will run any code that is passed in by a user. This can be used to compromise or break a target system. Effective 2 | Responsible ora
+
+CYBER INTERVENTION Information Release Break into your target’s emails and release them to journalists. Effective Responsible 2 | ®
+
+CYBER INTERVENTION Denial of Service Overwhelm a target system with vast amounts of specially created internet traffic. Effective Li Responsible -1)
+
+INTELLIGENCE Public Records Public records can contain vital intelligence, if you look closely enough. Effective 0 Responsible Pdi
+
+GOVERNANCE Risk Management A strong risk management framework minimises the likelihood of unintended consequences and increases precision. Effective a Responsible &
+
+GLITCH Keep a Zero Day Exploit Your equities board decides you can keep your zero day exploit a secret. Action Cards
+
