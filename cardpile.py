@@ -17,12 +17,11 @@ class CardPile():
 
     def __init__(self, pile_type):
         """
-        pile_type: CardPileTypes.ACTION, CardPileTypes.OBJECTIVE, or CardPileTypes.DISCARD (or their string equivalents)
+        Initialize an empty Cardpile of a specified type
+        Args:
+            pile_type: CardPileTypes.ACTION, CardPileTypes.OBJECTIVE, or CardPileTypes.DISCARD
         """
-        if isinstance(pile_type, str):
-            self.type = CardPileTypes[pile_type.upper()]
-        else:
-            self.type = pile_type
+        self.type = CardPileTypes[pile_type.upper()]            
         self.content: List = []
 
 
@@ -32,7 +31,7 @@ class CardPile():
 
     def add(self, card)-> None:
         """
-        Add a card to the pile
+        Append card to cardpile.content. Change card.cardstatus accordingly
         """
         self.content.append(card)
         if self.type == CardPileTypes.ACTION:
