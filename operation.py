@@ -1,10 +1,5 @@
-#!/usr/bin/evn python3
-# -*- coding: utf-8 -*-
 """
-Created on 12/12/25
-
-@author waldo
-
+Define, build and evaluate an operation.
 """
 import die
 import cards
