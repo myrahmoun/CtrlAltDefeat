@@ -26,13 +26,13 @@ class CardPile():
     Can draw, add, shuffle, and check if empty.
     '''
 
-    def __init__(self, pile_type):
+    def __init__(self, pile_type:CardPileTypes):
         """
         Initialize an empty Cardpile of a specified type
         Args:
             pile_type: CardPileTypes.ACTION, CardPileTypes.OBJECTIVE, or CardPileTypes.DISCARD
         """
-        self.type = CardPileTypes[pile_type.upper()]            
+        self.type = pile_type      
         self.content: List = []
 
     
