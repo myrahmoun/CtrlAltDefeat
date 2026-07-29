@@ -1,7 +1,7 @@
-'''
+"""
 Action, objective, and glitch card classes in addition to Hand class.
 No methods, just definitions.
-'''
+"""
 
 from enum import Enum
 
@@ -20,11 +20,11 @@ class CardCategory(str, Enum):
     INTELLIGENCE = "Intelligence"
 
 class ActionCard:
-    '''
+    """
     Creates a new action card.
     - Eligible piles: Action, Cache
     - There can be a maximum of 4 action cards in a player's hand.
-    '''
+    """
 
     def __init__(self, name, description, category, responsibility, effect):
         self.name = name
@@ -39,11 +39,11 @@ class ActionCard:
 
 
 class ObjectiveCard:
-    '''
+    """
     Creates a new objective card.
     - Eligible piles: objective_pile
     - There must be 2 objective cards in a player's hand by the end of each turn.
-    '''
+    """
     def __init__(self, name, description, responsibility, effect):
         self.name = name
         self.description = description
@@ -55,11 +55,11 @@ class ObjectiveCard:
         return f"ObjectiveCard(name={self.name}, description={self.description}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
 
 class GlitchCard:
-    '''
+    """
     Creates a new glitch card.
     - Eligible piles: Action, Cache
     - Glitch cards must be played when drawn. 
-    '''
+    """
     def __init__(self, name, description, glitchType):
         self.name = name
         self.description = description
@@ -71,9 +71,9 @@ class GlitchCard:
 
 
 class Hand:
-    '''
+    """
     A collection of action and objective cards that each player has. 
-    '''
+    """
     def __init__(self):
         self.action_cards = []
         self.objective_cards = []
