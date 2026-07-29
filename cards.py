@@ -1,26 +1,6 @@
 '''
-This file contains the classes for the action, objective, and glitch cards.
-Parameters:
-    - name: the name of the action card
-    - description: the description of the action card
-    - respScore: the response score of the action card
-    - effectScore: the effect score of the action card
-    - category: 
-        - "Cybersecurity"
-        - "Governance"
-        - "Technology"
-        - "Intelligence"
-    - cardStatus: 
-        - in_action_pile
-        - in_cache_pile
-        - in_objective_pile
-        - in_hand
-        - in_play
-    - glitchType: 
-        - Draw 2 action cards
-        - Skip turn
-        - Discard "n" "category" action cards
-        - etc. we can extend this! `
+Action, objective, and glitch card classes in addition to Hand class.
+No methods, just definitions.
 '''
 
 from enum import Enum
@@ -100,6 +80,3 @@ class Hand:
 
     def __repr__(self):
         return f"Hand(action_cards={self.action_cards}, objective_cards={self.objective_cards})"
-
-
-    # def addActionCard(self, actionCard):
