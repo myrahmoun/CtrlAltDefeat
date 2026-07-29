@@ -1,5 +1,16 @@
-from typing import List, Optional
-from cards import ActionCard, ObjectiveCard, GlitchCard, CardStatus
+"""
+Cardpile class with methods. 
+
+Contains methods to do the following:
+- Initialize pile
+- Add a card to a pile
+- Draw a card from a pile
+- Report about pile (size, is empty, repr)
+- Shuffle pile
+"""
+
+from typing import List
+from cards import  CardStatus
 from enum import Enum
 import random
 
@@ -24,11 +35,7 @@ class CardPile():
         self.type = CardPileTypes[pile_type.upper()]            
         self.content: List = []
 
-
-    def is_empty(self)->bool:
-        return len(self.content) == 0
     
-
     def add(self, card)-> None:
         """
         Append card to cardpile.content. Change card.cardstatus accordingly
@@ -53,12 +60,6 @@ class CardPile():
         card = self.content.pop(0)  # Take from top
         return card
     
-
-    def size(self) -> int:
-        """Return number of cards in pile."""
-        return len(self.content)
-    
-
     def load_cards(self, cards: List) -> None:
         """
         Load a list of cards into the pile (used during initialization).
@@ -73,9 +74,19 @@ class CardPile():
                 card.cardStatus = CardStatus.IN_DISCARD_PILE
 
 
+    def size(self) -> int:
+        """Return number of cards in pile."""
+        return len(self.content)
+
+
+    def is_empty(self)->bool:
+        return len(self.content) == 0
+
+
     def shuffle(self) -> None:
         """Shuffle the cards in the pile."""
         random.shuffle(self.content)
+
 
     def __repr__(self):
         return f"CardPile(type={self.type}, size={self.size()})"
