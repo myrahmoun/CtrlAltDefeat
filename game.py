@@ -1,3 +1,7 @@
+"""
+Methods to setup and maintain a game
+"""
+
 from typing import List
 from pathlib import Path
 from enum import Enum
@@ -13,8 +17,8 @@ from operation import Operation, LoseTurnException
 
 
 # Game files
-ACTION_CARDS_FILE = Path(__file__).parent / "data" / "action_cards.json"
-OBJECTIVE_CARDS_FILE = Path(__file__).parent / "data" / "objective_cards.json"
+ACTION_CARDS_FILE = Path(__file__).parent / "data" / "full_action_cards.json"
+OBJECTIVE_CARDS_FILE = Path(__file__).parent / "data" / "full_objective_cards.json"
 
 class GameStats(Enum):
     LOBBY = 1
