@@ -29,7 +29,7 @@ class Operation(object):
         that card; otherwise return None.
         '''
         return_v = None
-        if  action.category == cards.CardCategory.INTELLIGENCE:
+        if action.category == cards.CardCategory.INTELLIGENCE:
             if self.intell is not None:
                 return_v = self.intell
             self.intell = action
