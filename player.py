@@ -1,4 +1,4 @@
-'''
+"""
 Player Parameters:
     - id: unique integer corresponding to player
     - name: the name of the player
@@ -11,7 +11,7 @@ Player Parameters:
         - "waiting"
         - "playing"
         - "finished"
-'''
+"""
 
 import uuid
 import cards
