@@ -1,5 +1,5 @@
 from typing import List, Optional
-from cards import ActionCard, ObjectiveCard
+from cards import NonObjectiveCard, ObjectiveCard
 
 class Board:
     '''
@@ -9,9 +9,9 @@ class Board:
     '''
     def __init__(self):
         # 5 card slots for displaying current operation (1 objective + 4 actions)
-        self.card_slots: List[Optional[ActionCard | ObjectiveCard]] = [None] * 5
+        self.card_slots: List[Optional[NonObjectiveCard | ObjectiveCard]] = [None] * 5
 
-    def display_cards(self, objective: ObjectiveCard, actions: List[ActionCard]) -> None:
+    def display_cards(self, objective: ObjectiveCard, actions: List[NonObjectiveCard]) -> None:
         """Puts the 5 cards (1 objective + 4 actions) into the board's display slots."""
         self.card_slots[0] = objective
         for i, action in enumerate(actions[:4]):  # Max 4 actions
