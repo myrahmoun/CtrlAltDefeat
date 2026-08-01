@@ -19,7 +19,7 @@ class CardCategory(str, Enum):
     TECHNOLOGY = "Technology"
     INTELLIGENCE = "Intelligence"
 
-class ActionCard:
+class NoneObjectiveCard:
     """
     Creates a new action or glitch card.
     - Eligible piles: Action, Cache
