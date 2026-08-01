@@ -6,7 +6,7 @@ No methods, just definitions.
 from enum import Enum
 
 class CardStatus(Enum):
-    IN_ACTIONPILE = "in_actionpile"
+    IN_NON_OBJECTIVE = "in_non_objective_pile"
     IN_CACHE_PILE = "in_cache_pile"
     IN_OBJECTIVE_PILE = "in_objective_pile"
     IN_HAND = "In_hand"
@@ -22,7 +22,7 @@ class CardCategory(str, Enum):
 class NonObjectiveCard:
     """
     Creates a new action or glitch card.
-    - Eligible piles: Action, Cache
+    - Eligible piles: Non_objective, Cache
     - There can be a maximum of 4 action cards in a player's hand.
     """
 
@@ -58,7 +58,7 @@ class ObjectiveCard:
 
 class Hand:
     """
-    A collection of action and objective cards that each player has. 
+    A collection of non_objective and objective cards that each player has. 
     """
     def __init__(self):
         self.action_cards = []

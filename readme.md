@@ -62,4 +62,4 @@ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. game.proto
 pytest tests/
 ```
 
-Co-authored by Claude Sonnet
+NOTE: Action and Glitch cards are referred to as non_objective cards.

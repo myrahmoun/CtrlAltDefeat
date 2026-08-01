@@ -11,7 +11,7 @@ import random
 from board import Board
 from cardpile import CardPile, CardPileTypes
 from player import Player
-from cards import ActionCard, ObjectiveCard
+from cards import NonObjectiveCard, ObjectiveCard
 from die import Die
 from operation import Operation, LoseTurnException
 
@@ -33,7 +33,7 @@ class Game():
 
         self.board = Board()
         self.players: List[Player] = []
-        self.action_pile = CardPile(CardPileTypes.ACTION)
+        self.action_pile = CardPile(CardPileTypes.NON_OBJECTIVE)
         self.objective_pile = CardPile(CardPileTypes.OBJECTIVE)
         self.discard_pile = CardPile(CardPileTypes.DISCARD)
         self.die = Die(6)
@@ -47,7 +47,7 @@ class Game():
             raise ValueError(f"Cannot start game: need 3-6 players, have {len(self.players)}. Game status: {self.status}")
 
         # Load cards into piles
-        self._load_cards(ACTION_CARDS_FILE, CardPileTypes.ACTION)
+        self._load_cards(ACTION_CARDS_FILE, CardPileTypes.NON_OBJECTIVE)
         self._load_cards(OBJECTIVE_CARDS_FILE, CardPileTypes.OBJECTIVE)
         self.action_pile.shuffle()
         self.objective_pile.shuffle()
@@ -79,23 +79,23 @@ class Game():
         return 3 <= len(self.players) <= 6 and self.status == GameStats.LOBBY
     
 
-    def _load_cards(self, path: Path, pile_type: CardPileTypes) -> None:
+    def _load_cards(self, path: Path, pile_type: CardPileTypes) -> None: # TODO: match format to new jsons
         if not path.exists():
             raise FileNotFoundError(f"Cards file not found: {path}")
 
         with open(path, 'r') as f:
             data = json.load(f)
-        if 'cards' not in data:
-            raise ValueError(f"Invalid format in {path}: missing 'cards' key")
+        # if 'cards' not in data:
+        #     raise ValueError(f"Invalid format in {path}: missing 'cards' key")
 
-        if pile_type == CardPileTypes.ACTION:
+        if pile_type == CardPileTypes.NON_OBJECTIVE:
             cards = [
-                ActionCard(
+                NonObjectiveCard(
                     name=c['name'], description=c['description'],
                     category=c['category'], responsibility=c['responsibility'],
                     effect=c['effect']
                 )
-                for c in data['cards']
+                for c in data
             ]
             self.action_pile.load_cards(cards)
         elif pile_type == CardPileTypes.OBJECTIVE:
@@ -118,7 +118,7 @@ class Game():
     def pass_turn(self) -> None:
         self.next_turn()
 
-    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]):
+    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[NonObjectiveCard]):
         if player.lose_next_turn:
             player.lose_next_turn = False
             self.next_turn()
@@ -151,7 +151,7 @@ class Game():
         self.next_turn()
         return result
 
-    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> dict:
+    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[NonObjectiveCard]) -> dict:
         operation = Operation(objective)
         for action in actions:
             operation.add_action(action)

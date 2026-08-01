@@ -15,7 +15,7 @@ from enum import Enum
 import random
 
 class CardPileTypes(Enum):
-    ACTION = 1
+    NON_OBJECTIVE = 1
     OBJECTIVE = 2
     DISCARD = 3
 
@@ -30,7 +30,7 @@ class CardPile():
         """
         Initialize an empty Cardpile of a specified type
         Args:
-            pile_type: CardPileTypes.ACTION, CardPileTypes.OBJECTIVE, or CardPileTypes.DISCARD
+            pile_type: CardPileTypes.NON_OBJECTIVE, CardPileTypes.OBJECTIVE, or CardPileTypes.DISCARD
         """
         self.type = pile_type      
         self.content: List = []
@@ -41,8 +41,8 @@ class CardPile():
         Append card to cardpile.content. Change card.cardstatus accordingly
         """
         self.content.append(card)
-        if self.type == CardPileTypes.ACTION:
-            card.cardStatus = CardStatus.IN_ACTIONPILE
+        if self.type == CardPileTypes.NON_OBJECTIVE:
+            card.cardStatus = CardStatus.IN_NON_OBJECTIVE
         elif self.type == CardPileTypes.OBJECTIVE:
             card.cardStatus = CardStatus.IN_OBJECTIVE_PILE
         elif self.type == CardPileTypes.DISCARD:
@@ -66,8 +66,8 @@ class CardPile():
         """
         self.content = cards
         for card in cards:
-            if self.type == CardPileTypes.ACTION:
-                card.cardStatus = CardStatus.IN_ACTIONPILE
+            if self.type == CardPileTypes.NON_OBJECTIVE:
+                card.cardStatus = CardStatus.IN_NON_OBJECTIVE
             elif self.type == CardPileTypes.OBJECTIVE:
                 card.cardStatus = CardStatus.IN_OBJECTIVE_PILE
             elif self.type == CardPileTypes.DISCARD:
