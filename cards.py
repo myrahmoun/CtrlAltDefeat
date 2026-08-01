@@ -21,21 +21,22 @@ class CardCategory(str, Enum):
 
 class ActionCard:
     """
-    Creates a new action card.
+    Creates a new action or glitch card.
     - Eligible piles: Action, Cache
     - There can be a maximum of 4 action cards in a player's hand.
     """
 
-    def __init__(self, name, description, category, responsibility, effect):
+    def __init__(self, name, description, category, responsibility=None, effect=None, glitchType=None):
         self.name = name
         self.description = description
         self.category = category
         self.responsibility = responsibility
         self.effect = effect
-        self.cardStatus = CardStatus.IN_ACTIONPILE
+        self.glitchType = glitchType
+        self.cardStatus:CardStatus
 
     def __repr__(self):
-        return f"ActionCard(name={self.name}, description={self.description}, category={self.category}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
+        return f"NoneObjectiveCard(name={self.name}, description={self.description}, category={self.category}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
 
 
 class ObjectiveCard:
@@ -49,26 +50,11 @@ class ObjectiveCard:
         self.description = description
         self.responsibility = responsibility
         self.effect = effect
-        self.cardStatus = CardStatus.IN_OBJECTIVE_PILE
+        self.cardStatus:CardStatus
 
     def __repr__(self):
         return f"ObjectiveCard(name={self.name}, description={self.description}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
-
-class GlitchCard:
-    """
-    Creates a new glitch card.
-    - Eligible piles: Action, Cache
-    - Glitch cards must be played when drawn. 
-    """
-    def __init__(self, name, description, glitchType):
-        self.name = name
-        self.description = description
-        self.glitchType = glitchType
-        self.cardStatus = CardStatus.IN_ACTIONPILE
-
-    def __repr__(self):
-        return f"GlitchCard(name={self.name}, description={self.description}, glitch={self.glitchType}, status={self.cardStatus})"
-
+    
 
 class Hand:
     """
