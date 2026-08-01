@@ -1,5 +1,5 @@
 """
-Action, objective, and glitch card classes in addition to Hand class.
+Objective and non-objective card classes in addition to Hand class.
 No methods, just definitions.
 """
 
@@ -19,7 +19,7 @@ class CardCategory(str, Enum):
     TECHNOLOGY = "Technology"
     INTELLIGENCE = "Intelligence"
 
-class NoneObjectiveCard:
+class NonObjectiveCard:
     """
     Creates a new action or glitch card.
     - Eligible piles: Action, Cache
@@ -36,7 +36,7 @@ class NoneObjectiveCard:
         self.cardStatus:CardStatus
 
     def __repr__(self):
-        return f"NoneObjectiveCard(name={self.name}, description={self.description}, category={self.category}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
+        return f"NonObjectiveCard(name={self.name}, description={self.description}, category={self.category}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
 
 
 class ObjectiveCard:
