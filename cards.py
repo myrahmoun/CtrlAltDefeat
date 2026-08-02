@@ -18,6 +18,7 @@ class CardCategory(str, Enum):
     GOVERNANCE = "Governance"
     TECHNOLOGY = "Technology"
     INTELLIGENCE = "Intelligence"
+    GLITCH = "Glitch"
 
 class NonObjectiveCard:
     """
@@ -26,14 +27,14 @@ class NonObjectiveCard:
     - There can be a maximum of 4 action cards in a player's hand.
     """
 
-    def __init__(self, name, description, category, responsibility=None, effect=None, glitchType=None):
+    def __init__(self, name, description, category, responsibility=None, effect=None, glitchType=""):
         self.name = name
         self.description = description
         self.category = category
         self.responsibility = responsibility
         self.effect = effect
         self.glitchType = glitchType
-        self.cardStatus:CardStatus
+        self.cardStatus=CardStatus['IN_NON_OBJECTIVE']
 
     def __repr__(self):
         return f"NonObjectiveCard(name={self.name}, description={self.description}, category={self.category}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
@@ -50,7 +51,7 @@ class ObjectiveCard:
         self.description = description
         self.responsibility = responsibility
         self.effect = effect
-        self.cardStatus:CardStatus
+        self.cardStatus=CardStatus['IN_OBJECTIVE_PILE']
 
     def __repr__(self):
         return f"ObjectiveCard(name={self.name}, description={self.description}, respScore={self.responsibility}, effectScore={self.effect}, status={self.cardStatus})"
@@ -61,8 +62,8 @@ class Hand:
     A collection of non_objective and objective cards that each player has. 
     """
     def __init__(self):
-        self.action_cards = []
+        self.non_objective_cards = []
         self.objective_cards = []
 
     def __repr__(self):
-        return f"Hand(action_cards={self.action_cards}, objective_cards={self.objective_cards})"
+        return f"Hand(non_objective_cards={self.non_objective_cards}, objective_cards={self.objective_cards})"

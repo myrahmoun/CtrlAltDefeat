@@ -108,16 +108,17 @@ message Player {
 }
 
 message Hand {
-  repeated ActionCard    action_cards    = 1;
+  repeated NonObjectiveCard    non_objective_cards    = 1;
   repeated ObjectiveCard objective_cards = 2;
 }
 
-message ActionCard {
+message NonObjectiveCard {
   string name           = 1;
   string description    = 2;
   string category       = 3;
   int32  responsibility = 4;
   int32  effect         = 5;
+  string  glitchType    = 6;
 }
 
 message ObjectiveCard {

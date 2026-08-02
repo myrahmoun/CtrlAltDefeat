@@ -63,7 +63,7 @@ class Game():
                 card = self.action_pile.draw()
                 if not card:
                     raise RuntimeError("Ran out of action cards during deal")
-                player.hand.action_cards.append(card)
+                player.hand.non_objective_cards.append(card)
 
         # Initialize and shuffle turn order
         self.turn_order = self.players[:]
@@ -85,15 +85,13 @@ class Game():
 
         with open(path, 'r') as f:
             data = json.load(f)
-        # if 'cards' not in data:
-        #     raise ValueError(f"Invalid format in {path}: missing 'cards' key")
 
         if pile_type == CardPileTypes.NON_OBJECTIVE:
             cards = [
                 NonObjectiveCard(
                     name=c['name'], description=c['description'],
-                    category=c['category'], responsibility=c['responsibility'],
-                    effect=c['effect']
+                    category=c['category'], responsibility=c['responsibility'] if c['responsibility']!="" else 0,
+                    effect=c['effect']if c['effect']!="" else 0, glitchType=c.get('glitchType') or ""
                 )
                 for c in data
             ]
@@ -104,7 +102,7 @@ class Game():
                     name=c['name'], description=c['description'],
                     responsibility=c['responsibility'], effect=c['effect']
                 )
-                for c in data['cards']
+                for c in data
             ]
             self.objective_pile.load_cards(cards)
 
@@ -137,7 +135,7 @@ class Game():
         # Discard cards
         for card in actions:
             self.discard_pile.add(card)
-            player.hand.action_cards.remove(card)
+            player.hand.non_objective_cards.remove(card)
 
         player.hand.objective_cards.remove(objective)
         self.objective_pile.content.append(objective)
@@ -194,8 +192,8 @@ class Game():
         for _ in range(count):
             self._refill_if_empty(self.action_pile)
             card = self.action_pile.draw()
-            if card and len(player.hand.action_cards) < 6:
-                player.hand.action_cards.append(card)
+            if card:
+                player.hand.non_objective_cards.append(card)
 
     def end_game(self, winner: Player) -> None:
         self.status = GameStats.FINISHED

@@ -47,10 +47,10 @@ def _to_proto_state(game: Game) -> pb.GameState:
             board_position=p.board_position,
             lose_next_turn=p.lose_next_turn,
             hand=pb.Hand(
-                action_cards=[pb.ActionCard(
+                non_objective_cards=[pb.NonObjectiveCard(
                     name=c.name, description=c.description, category=c.category,
-                    responsibility=c.responsibility, effect=c.effect,
-                ) for c in p.hand.action_cards],
+                    responsibility=c.responsibility, effect=c.effect,glitchType=c.glitchType
+                ) for c in p.hand.non_objective_cards],
                 objective_cards=[pb.ObjectiveCard(
                     name=c.name, description=c.description,
                     responsibility=c.responsibility, effect=c.effect,
@@ -136,7 +136,7 @@ class GameServicer(pb_grpc.GameServicer):
             if player.id != game.get_current_player().id:
                 context.abort(grpc.StatusCode.FAILED_PRECONDITION, "It is not your turn")
             obj = player.hand.objective_cards[request.objective_index]
-            actions = [player.hand.action_cards[i] for i in request.action_indices]
+            actions = [player.hand.non_objective_cards[i] for i in request.action_indices]
             result = game.execute_turn(player, obj, actions)
             _broadcast(game.id, game)
             if result is None:
@@ -150,8 +150,8 @@ class GameServicer(pb_grpc.GameServicer):
             game = _get_game(request.game_id, context)
             player = _find_player(game, request.player_id)
             try:
-                card = player.hand.action_cards[request.card_index]
-                player.hand.action_cards.remove(card)
+                card = player.hand.non_objective_cards[request.card_index]
+                player.hand.non_objective_cards.remove(card)
                 game.discard_pile.add(card)
             except IndexError:
                 context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Invalid card index")
