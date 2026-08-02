@@ -79,7 +79,7 @@ class Game():
         return 3 <= len(self.players) <= 6 and self.status == GameStats.LOBBY
     
 
-    def _load_cards(self, path: Path, pile_type: CardPileTypes) -> None: # TODO: match format to new jsons
+    def _load_cards(self, path: Path, pile_type: CardPileTypes) -> None:
         if not path.exists():
             raise FileNotFoundError(f"Cards file not found: {path}")
 
