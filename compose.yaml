@@ -1,0 +1,6 @@
+services:
+  beanbag:
+    image: beanbag
+    build:
+      context: .
+      dockerfile: ./Dockerfile

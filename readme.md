@@ -55,6 +55,7 @@ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. game.proto
 | `game.proto` | gRPC service and message definitions |
 | `server.py` | gRPC server — hosts game state and logic |
 | `client.py` | gRPC client — networked player terminal |
+| Dockerfile and other docker files | containerize the requirements |
 
 ## Tests
 
@@ -63,3 +64,6 @@ pytest tests/
 ```
 
 NOTE: Action and Glitch cards are referred to as non_objective cards.
+
+## Docker
+Run `docker build -t beanbag .` to build the container. Untested.
