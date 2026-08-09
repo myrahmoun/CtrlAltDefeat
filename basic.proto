@@ -100,25 +100,41 @@ message GameState {
 }
 
 message Player {
-  string            id             = 1;
-  string            name           = 2;
-  int32             board_position = 3;
-  bool              lose_next_turn = 4;
-  Hand              hand           = 5;
+  string id             = 1;
+  string name           = 2;
+  int32  board_position = 3;
+  bool   lose_next_turn = 4;
+  Hand   hand           = 5;
 }
 
 message Hand {
-  repeated NonObjectiveCard    non_objective_cards    = 1;
-  repeated ObjectiveCard objective_cards = 2;
+  repeated NonObjectiveCard non_objective_cards = 1;
+  repeated ObjectiveCard    objective_cards      = 2;
 }
 
+// A card drawn from the action/non-objective deck: either an ActionCard
+// or a GlitchCard, mirroring cards.py's class split.
 message NonObjectiveCard {
-  string name           = 1;
-  string description    = 2;
-  string category       = 3;
-  int32  responsibility = 4;
-  int32  effect         = 5;
-  string  glitchType    = 6;
+  string name        = 1;
+  string description = 2;
+
+  oneof card {
+    ActionCard action = 3;
+    GlitchCard glitch = 4;
+  }
+}
+
+message ActionCard {
+  string category       = 1;
+  int32  responsibility = 2;
+  int32  effect         = 3;
+}
+
+message GlitchCard {
+  string glitch_type      = 1;  // original free-text description
+  string effect_type      = 2;  // "discard" | "draw" | "skip_operation"
+  string target_category  = 3;  // empty if not category-restricted
+  int32  count            = 4;
 }
 
 message ObjectiveCard {

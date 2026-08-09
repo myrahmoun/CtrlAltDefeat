@@ -8,6 +8,7 @@ Terminal-based implementation of the Ctrl Alt Defeat card game. See `instruction
 
 All players share one terminal:
 
+DEPRECATED
 ```bash
 python run.py
 ```
@@ -35,7 +36,7 @@ pip install -r requirements.txt
 
 After installing, regenerate the gRPC bindings:
 ```bash
-python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. game.proto
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. basic.proto
 ```
 
 ## Structure
