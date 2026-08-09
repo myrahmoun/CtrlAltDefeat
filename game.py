@@ -172,8 +172,7 @@ class Game():
 
         # Discard cards
         for card in actions:
-            self.discard_pile.add(card)
-            player.hand.non_objective_cards.remove(card)
+            self.discard_card(player, card)
 
         player.hand.objective_cards.remove(objective)
         self.objective_pile.content.append(objective)
@@ -252,6 +251,18 @@ class Game():
             card = self.action_pile.draw()
             if card:
                 player.hand.non_objective_cards.append(card)
+
+    def discard_card(self, player: Player, card) -> None:
+        """
+        Remove `card` from the player's non-objective hand and add it to
+        the discard pile. Used both for voluntary end-of-turn discards and
+        for glitch-triggered discards.
+        Raises ValueError if the player doesn't have that card in hand.
+        """
+        if card not in player.hand.non_objective_cards:
+            raise ValueError(f"{player.name} does not have {card.name} in hand")
+        player.hand.non_objective_cards.remove(card)
+        self.discard_pile.add(card)
 
     def end_game(self, winner: Player) -> None:
         """Mark the game as FINISHED and record the winning player."""
