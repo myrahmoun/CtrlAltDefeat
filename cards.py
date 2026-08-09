@@ -68,6 +68,17 @@ class ActionCard(NonObjectiveCard):
     def category(self) -> CardCategory:
         return self._category
 
+    @classmethod
+    def from_json(cls, data: dict) -> "ActionCard":
+        """Build an ActionCard from a raw JSON card entry, defaulting blank responsibility/effect to 0."""
+        return cls(
+            name=data['name'],
+            description=data['description'],
+            category=data['category'],
+            responsibility=data['responsibility'] if data['responsibility'] != "" else 0,
+            effect=data['effect'] if data['effect'] != "" else 0,
+        )
+
     def __repr__(self):
         return (f"ActionCard(name={self.name}, category={self.category}, "
                 f"respScore={self.responsibility}, effectScore={self.effect}, "
@@ -149,6 +160,16 @@ class ObjectiveCard:
         self.responsibility = responsibility
         self.effect = effect
         self.cardStatus = CardStatus.IN_OBJECTIVE_PILE
+
+    @classmethod
+    def from_json(cls, data: dict) -> "ObjectiveCard":
+        """Build an ObjectiveCard from a raw JSON card entry."""
+        return cls(
+            name=data['name'],
+            description=data['description'],
+            responsibility=data['responsibility'],
+            effect=data['effect'],
+        )
 
     def __repr__(self):
         return (f"ObjectiveCard(name={self.name}, respScore={self.responsibility}, "

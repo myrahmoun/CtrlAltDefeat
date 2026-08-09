@@ -11,7 +11,7 @@ import random
 from board import Board
 from cardpile import CardPile, CardPileTypes
 from player import Player
-from cards import NonObjectiveCard, ObjectiveCard
+from cards import ActionCard, GlitchCard, ObjectiveCard, CardCategory
 from die import Die
 from operation import Operation, LoseTurnException
 
@@ -27,7 +27,13 @@ class GameStats(Enum):
 
 
 class Game():
+    """
+    Owns and drives a single game's state: the board, players, card piles,
+    turn order, and the rules for setting up, progressing, and ending a game.
+    """
+
     def __init__(self, game_id: str) -> None:
+        """Create a new game in LOBBY status with empty piles and no players yet."""
         self.id = game_id
         self.status = GameStats.LOBBY
 
@@ -43,6 +49,12 @@ class Game():
         self.current_turn_index: int = 0
 
     def setup_game(self) -> None:
+        """
+        Transition the game from LOBBY to PLAYING: load and shuffle both
+        decks, deal each player 2 objective cards and 4 action cards,
+        randomize turn order, and mark the game as in progress.
+        Raises ValueError if the player count or game status don't allow a start.
+        """
         if not self._can_start():
             raise ValueError(f"Cannot start game: need 3-6 players, have {len(self.players)}. Game status: {self.status}")
 
@@ -73,13 +85,29 @@ class Game():
         # Set game status to playing
         self.status = GameStats.PLAYING
 
-        
+
     def _can_start(self) -> bool:
         """Check if game has 3-6 players and status is 'lobby'"""
         return 3 <= len(self.players) <= 6 and self.status == GameStats.LOBBY
-    
+
+
+    @staticmethod
+    def _copy_count(entry: dict) -> int:
+        """
+        Return how many copies of a card to load, per the JSON entry's
+        'count' field. An empty string or missing field defaults to 1 copy.
+        """
+        raw = entry.get('count', "")
+        return int(raw) if raw != "" else 1
 
     def _load_cards(self, path: Path, pile_type: CardPileTypes) -> None:
+        """
+        Read a card JSON file and load it into the given pile, expanding
+        each entry into `count` copies. Non-objective entries become either
+        an ActionCard or a GlitchCard depending on their category; objective
+        entries become ObjectiveCards.
+        Raises FileNotFoundError if the given path doesn't exist.
+        """
         if not path.exists():
             raise FileNotFoundError(f"Cards file not found: {path}")
 
@@ -87,36 +115,46 @@ class Game():
             data = json.load(f)
 
         if pile_type == CardPileTypes.NON_OBJECTIVE:
-            cards = [
-                NonObjectiveCard(
-                    name=c['name'], description=c['description'],
-                    category=c['category'], responsibility=c['responsibility'] if c['responsibility']!="" else 0,
-                    effect=c['effect']if c['effect']!="" else 0, glitchType=c.get('glitchType') or ""
-                )
-                for c in data
-            ]
+            cards = []
+            for c in data:
+                copies = self._copy_count(c)
+                if c['category'] == CardCategory.GLITCH.value:
+                    cards.extend(GlitchCard.from_json(c) for _ in range(copies))
+                else:
+                    cards.extend(ActionCard.from_json(c) for _ in range(copies))
             self.action_pile.load_cards(cards)
         elif pile_type == CardPileTypes.OBJECTIVE:
-            cards = [
-                ObjectiveCard(
-                    name=c['name'], description=c['description'],
-                    responsibility=c['responsibility'], effect=c['effect']
-                )
-                for c in data
-            ]
+            cards = []
+            for c in data:
+                copies = self._copy_count(c)
+                cards.extend(ObjectiveCard.from_json(c) for _ in range(copies))
             self.objective_pile.load_cards(cards)
 
     def get_current_player(self) -> Player:
+        """Return the player whose turn it currently is."""
         return self.turn_order[self.current_turn_index]
 
     def next_turn(self) -> Player:
+        """Advance current_turn_index to the next player and return them."""
         self.current_turn_index = (self.current_turn_index + 1) % len(self.turn_order)
         return self.get_current_player()
 
     def pass_turn(self) -> None:
+        """Skip the current player's turn without executing an operation."""
         self.next_turn()
 
-    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[NonObjectiveCard]):
+    def execute_turn(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]):
+        """
+        Run a player's turn: if they're serving a skipped turn, just advance
+        play. Otherwise build and evaluate an operation from the given
+        objective and 4 action cards, apply its outcome to the player's
+        board position, discard the used cards, deal a replacement
+        objective card, and advance to the next player.
+
+        Returns the operation result dict (see _execute_operation), or None
+        if the turn was skipped or the game just ended.
+        Raises ValueError if not given exactly 4 action cards and 1 objective.
+        """
         if player.lose_next_turn:
             player.lose_next_turn = False
             self.next_turn()
@@ -149,7 +187,17 @@ class Game():
         self.next_turn()
         return result
 
-    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[NonObjectiveCard]) -> dict:
+    def _execute_operation(self, player: Player, objective: ObjectiveCard, actions: List[ActionCard]) -> dict:
+        """
+        Build an Operation from the objective and action cards, evaluate it,
+        and apply the outcome to the player: move them forward on success
+        (with a bonus space and 2 extra cards if responsibility >= 4), or
+        flag them to lose their next turn if the operation triggers a
+        LoseTurnException.
+
+        Returns a dict describing the outcome: responsibility, effect,
+        success, spaces_moved, bonus, and lose_turn.
+        """
         operation = Operation(objective)
         for action in actions:
             operation.add_action(action)
@@ -181,6 +229,11 @@ class Game():
         return result
 
     def _refill_if_empty(self, pile: CardPile) -> None:
+        """
+        If the given pile is empty, refill it by shuffling the discard pile
+        back in. Raises RuntimeError if both the pile and the discard pile
+        are empty, since there's nothing left to refill from.
+        """
         if pile.is_empty():
             if self.discard_pile.is_empty():
                 raise RuntimeError("Cannot refill: both deck and discard pile are empty")
@@ -189,6 +242,11 @@ class Game():
             pile.shuffle()
 
     def draw_cards(self, player: Player, count: int = 2) -> None:
+        """
+        Draw `count` cards from the action pile into the player's hand,
+        refilling the action pile from the discard pile if it runs out
+        mid-draw.
+        """
         for _ in range(count):
             self._refill_if_empty(self.action_pile)
             card = self.action_pile.draw()
@@ -196,5 +254,6 @@ class Game():
                 player.hand.non_objective_cards.append(card)
 
     def end_game(self, winner: Player) -> None:
+        """Mark the game as FINISHED and record the winning player."""
         self.status = GameStats.FINISHED
         self.winner = winner
