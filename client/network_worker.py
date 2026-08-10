@@ -37,25 +37,29 @@ class GameStreamWorker(QObject):
         self.game_id = game_id
         self.player_id = player_id
         self._watching = False
+        self._call = None  # the in-flight streaming call, so stop_watching() can cancel it
  
     @Slot()
     def start_watching(self) -> None:
         """Blocks this thread until the stream ends. Call once, right after this object's thread starts."""
         self._watching = True
+        self._call = self._stub.WatchGame(
+            pb.WatchRequest(game_id=self.game_id, player_id=self.player_id)
+        )
         try:
-            for state in self._stub.WatchGame(
-                pb.WatchRequest(game_id=self.game_id, player_id=self.player_id)
-            ):
+            for state in self._call:
                 if not self._watching:
                     break
                 self.state_updated.emit(state)
         except grpc.RpcError as e:
             if self._watching:  # don't report an error if we intentionally stopped
                 self.stream_failed.emit(f"Lost connection to game: {e.details()}")
- 
+
     def stop_watching(self) -> None:
-        """Ask the watch loop to exit at its next opportunity."""
+        """Cancel the in-flight stream so start_watching()'s blocking loop actually unblocks."""
         self._watching = False
+        if self._call is not None:
+            self._call.cancel()
  
  
 class GameActionWorker(QObject):

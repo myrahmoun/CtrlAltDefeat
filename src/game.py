@@ -62,8 +62,14 @@ class Game():
         # Load cards into piles
         self._load_cards(ACTION_CARDS_FILE, CardPileTypes.NON_OBJECTIVE)
         self._load_cards(OBJECTIVE_CARDS_FILE, CardPileTypes.OBJECTIVE)
-        self.action_pile.shuffle()
         self.objective_pile.shuffle()
+
+        # Glitch cards are only ever drawn, never dealt — pull them out of
+        # the pile before the initial deal so no player can start with one,
+        # then merge them back in afterward for normal mid-game draws.
+        glitch_cards = [c for c in self.action_pile.content if isinstance(c, GlitchCard)]
+        self.action_pile.content = [c for c in self.action_pile.content if not isinstance(c, GlitchCard)]
+        self.action_pile.shuffle()
 
         # Populate cards in each player's hand
         for player in self.players:
@@ -78,6 +84,11 @@ class Game():
                     raise RuntimeError("Ran out of action cards during deal")
                 player.hand.non_objective_cards.append(card)
 
+        # Merge glitch cards back into the action pile now that dealing is
+        # done, and reshuffle so they're mixed in for mid-game draws.
+        self.action_pile.content.extend(glitch_cards)
+        self.action_pile.shuffle()
+
         # Initialize and shuffle turn order
         self.turn_order = self.players[:]
         random.shuffle(self.turn_order)
@@ -85,7 +96,6 @@ class Game():
 
         # Set game status to playing
         self.status = GameStats.PLAYING
-
 
     def _can_start(self) -> bool:
         """Check if game has 3-6 players and status is 'lobby'"""

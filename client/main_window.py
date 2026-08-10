@@ -84,6 +84,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._controls_widget)
 
         self.setCentralWidget(central)
+        self.resize(800, 900)
+        self.setMinimumSize(400, 400)
 
         # Widget -> MainWindow (never widget -> worker directly)
         self._controls_widget.play_clicked.connect(self._on_play_clicked)
@@ -180,6 +182,7 @@ class MainWindow(QMainWindow):
         """
         self._pending_player_name = player_name
         if game_id:
+            self.game_id = game_id
             self.request_join_game(game_id, player_name)
         else:
             # game_created (fired by the worker once CreateGame returns)
@@ -214,6 +217,10 @@ class MainWindow(QMainWindow):
     def on_state_updated(self, state) -> None:
         view = game_state_from_proto(state)
         self._latest_state = view
+
+        # TEMPORARY - REPLACE LATER WITH READY AND START BUTTONS
+        if view.status == "lobby" and len(view.players) >= 3:
+            self.request_start_game()
 
         self._board_widget.update_from(view)
 

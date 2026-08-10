@@ -160,7 +160,12 @@ class LobbyServicer(pb_grpc.LobbyServicer):
                 continue
 
     def _unregister_watcher(self, game_id, player_id, q: queue.Queue) -> None:
-        """Briefly locks the game to remove this watcher and auto-skip its turn if needed."""
+        """
+        Briefly locks the game to remove this watcher and treat their
+        disconnect as leaving the game entirely (Option A): if it was their
+        turn, advance play first, then remove them from the game and turn
+        order so they no longer appear on anyone's board.
+        """
         with _registry_lock:
             game = _games.get(game_id)
             lock = _game_locks.get(game_id)
@@ -169,12 +174,24 @@ class LobbyServicer(pb_grpc.LobbyServicer):
         with lock:
             if q in _watchers.get(game_id, []):
                 _watchers[game_id].remove(q)
-            if (game.status == GameStats.PLAYING
-                    and game.get_current_player().id == player_id):
-                game.pass_turn()
-                _broadcast(game_id, game)
-                print(f"[server] {player_id} disconnected — turn auto-skipped")
 
+            player = next((p for p in game.players if p.id == player_id), None)
+            if player is None:
+                return  # already left some other way
+
+            was_current = (
+                game.status == GameStats.PLAYING
+                and game.get_current_player().id == player_id
+            )
+            if was_current:
+                game.pass_turn()
+
+            game.players.remove(player)
+            if player in game.turn_order:
+                game.turn_order.remove(player)
+
+            _broadcast(game_id, game)
+            print(f"[server] {player.name} ({player_id}) disconnected and was removed from {game_id}")
 
 class GameServicer(pb_grpc.GameServicer):
 
