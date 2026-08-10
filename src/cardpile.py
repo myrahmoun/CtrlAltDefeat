@@ -10,7 +10,7 @@ Contains methods to do the following:
 """
 
 from typing import List
-from cards import CardStatus
+from src.cards import CardStatus
 from enum import Enum
 import random
 

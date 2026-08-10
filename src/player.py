@@ -14,7 +14,7 @@ Player Parameters:
 """
 
 import uuid
-import cards
+import src.cards as cards
 
 class Player:
     def __init__(self, name, role='ally'):

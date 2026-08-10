@@ -7,6 +7,8 @@ conftest.py
 /__pycache__
 /.pytest_cache
 /docs
+beanbag.egg-info
+.vscode
 instructions.md
 refactor.md
 api_plan.md

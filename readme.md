@@ -1,62 +1,75 @@
 # Beanbag — Ctrl Alt Defeat
 
-Terminal-based implementation of the Ctrl Alt Defeat card game. See `instructions.md` for full game rules.
+GUI implementation of the Ctrl Alt Defeat card game, played over a local network. See `instructions.md` for full game rules.
 
-## Play
+## Setup
 
-### Single machine
+Requires Python 3.14.
 
-All players share one terminal:
+Install dependencies:
 
-DEPRECATED
-```bash
-python run.py
-```
-
-### Multiplayer (LAN)
-
-Each player connects from their own machine over a local network.
-
-**Host machine — start the server:**
-```bash
-python server.py
-```
-
-**Every player (including host) — start a client:**
-```bash
-python client.py
-```
-
-When prompted, enter the host's local IP and port (e.g. `192.168.1.10:50051`). The first player to connect creates a game and shares the game ID with the others. Once everyone has joined, press Enter to start.
-
-Requires Python 3.14. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-After installing, regenerate the gRPC bindings:
+Install the project itself in editable mode — this makes `src`, `proto`, `server`, and `client` importable as packages from anywhere in the repo, and only needs to be run once per environment:
+
 ```bash
-python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. basic.proto
+pip install -e .
 ```
+
+After installing, regenerate the gRPC bindings if `proto/basic.proto` has changed:
+
+```bash
+python -m grpc_tools.protoc -I. --python_out=proto --grpc_python_out=proto proto/basic.proto
+```
+
+## Play
+
+**Host machine — start the server:**
+
+```bash
+python server/server.py
+```
+
+**Every player (including host) — start a client:**
+
+```bash
+python client/app.py
+```
+
+You'll be prompted for the host's local IP and port (e.g. `192.168.1.10:50051`), then a game ID (leave blank to create a new game) and your player name. Once everyone has joined, the host starts the game.
 
 ## Structure
 
+root/
+├── src/ core game logic, no networking or UI
+├── proto/ gRPC service/message definitions and generated bindings
+├── server/ gRPC server — hosts game state and logic
+├── client/ PySide6 GUI client — networked player app
+├── data/ card definitions (JSON)
+├── tests/ pytest tests
+└── docs/ design notes
+
 | File | Purpose |
-|------|---------|
-| `run.py` | Single-machine entry point |
-| `refactor.py` | `Game` class — all game logic (setup, turns, card management) |
-| `player.py` | `Player` model |
-| `cards.py` | `ActionCard`, `ObjectiveCard`, `GlitchCard`, `Hand` |
-| `cardpile.py` | `CardPile` — draw, shuffle, refill from discard |
-| `board.py` | Board display and card slots |
-| `operation.py` | Operation evaluation and scoring |
-| `die.py` | Die roll |
+| ------ | --------- |
+| `src/game.py` | `Game` class — setup, turns, card management |
+| `src/player.py` | `Player` model |
+| `src/cards.py` | `ActionCard`, `ObjectiveCard`, `GlitchCard`, `Hand` (`NonObjectiveCard` is the shared abstract base of `ActionCard`/`GlitchCard`) |
+| `src/cardpile.py` | `CardPile` — draw, shuffle, refill from discard |
+| `src/board.py` | Board display and card slots |
+| `src/operation.py` | Operation evaluation and scoring |
+| `src/die.py` | Die roll |
+| `proto/basic.proto` | gRPC service and message definitions |
+| `proto/basic_pb2.py`, `proto/basic_pb2_grpc.py` | generated gRPC bindings |
+| `server/server.py` | gRPC server — hosts game state and logic, one lock per game |
+| `client/app.py` | Entry point — creates the Qt app and window |
+| `client/main_window.py` | Main window — owns the network workers and reacts to their signals |
+| `client/network_worker.py` | `GameStreamWorker` (long-lived watch stream) and `GameActionWorker` (request/response RPCs), each on its own background thread |
+| `client/view_model.py` | Translates proto messages into plain Python view objects for widgets |
+| `client/widgets/` | `BoardWidget`, `HandWidget`, `ControlsWidget`, and the in-progress `LobbyWidget` |
 | `data/` | Card definitions (JSON) |
 | `tests/` | pytest tests |
-| `game.proto` | gRPC service and message definitions |
-| `server.py` | gRPC server — hosts game state and logic |
-| `client.py` | gRPC client — networked player terminal |
-| Dockerfile and other docker files | containerize the requirements |
 
 ## Tests
 
@@ -64,7 +77,8 @@ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. basic.proto
 pytest tests/
 ```
 
-NOTE: Action and Glitch cards are referred to as non_objective cards.
+NOTE: Action and Glitch cards are both drawn from the same deck and share an abstract base class, `NonObjectiveCard`, in `src/cards.py`.
 
 ## Docker
+
 Run `docker build -t beanbag .` to build the container. Untested.

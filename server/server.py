@@ -4,26 +4,32 @@ import queue
 import threading
 from concurrent import futures
 
-from game import Game, GameStats
-from player import Player as GamePlayer
-import basic_pb2 as pb
-import basic_pb2_grpc as pb_grpc
+from src.game import Game, GameStats
+from src.player import Player as GamePlayer
+from src.cards import ActionCard, GlitchCard
+from proto import basic_pb2 as pb
+from proto import basic_pb2_grpc as pb_grpc
 
+# ── Registry ──────────────────────────────────────────────────────────────
+# _registry_lock protects only the three dicts below (creating/looking up
+# entries) — it is never held during actual game logic. Each game has its
+# own lock in _game_locks, acquired only for that game's mutations, so
+# unrelated games never block each other.
 
-# Active games and their watcher queues
 _games: dict[str, Game] = {}
+_game_locks: dict[str, threading.Lock] = {}
 _watchers: dict[str, list[queue.Queue]] = {}
-_lock = threading.Lock()
+_registry_lock = threading.Lock()
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────
-
-def _get_game(game_id, context):
-    """Look up a game by ID, aborting with NOT_FOUND if missing."""
-    game = _games.get(game_id)
+def _get_game_and_lock(game_id, context):
+    """Look up a game and its lock, aborting with NOT_FOUND if missing."""
+    with _registry_lock:
+        game = _games.get(game_id)
+        lock = _game_locks.get(game_id)
     if not game:
         context.abort(grpc.StatusCode.NOT_FOUND, f"Game {game_id} not found")
-    return game
+    return game, lock
 
 
 def _find_player(game: Game, player_id: str) -> GamePlayer:
@@ -31,6 +37,28 @@ def _find_player(game: Game, player_id: str) -> GamePlayer:
         if p.id == player_id:
             return p
     raise KeyError(f"Player {player_id} not found in game {game.id}")
+
+
+def _non_objective_card_to_proto(c) -> pb.NonObjectiveCard:
+    """Build the oneof-wrapped proto card, branching on which subclass c actually is."""
+    if isinstance(c, ActionCard):
+        return pb.NonObjectiveCard(
+            name=c.name, description=c.description,
+            action=pb.ActionCard(
+                category=c.category, responsibility=c.responsibility, effect=c.effect,
+            ),
+        )
+    elif isinstance(c, GlitchCard):
+        return pb.NonObjectiveCard(
+            name=c.name, description=c.description,
+            glitch=pb.GlitchCard(
+                glitch_type=c.glitchType,
+                effect_type=c.effect_type.value,
+                target_category=c.target_category.value if c.target_category else "",
+                count=c.count,
+            ),
+        )
+    raise TypeError(f"Unknown non-objective card type: {type(c)!r}")
 
 
 def _to_proto_state(game: Game) -> pb.GameState:
@@ -47,10 +75,7 @@ def _to_proto_state(game: Game) -> pb.GameState:
             board_position=p.board_position,
             lose_next_turn=p.lose_next_turn,
             hand=pb.Hand(
-                non_objective_cards=[pb.NonObjectiveCard(
-                    name=c.name, description=c.description, category=c.category,
-                    responsibility=c.responsibility, effect=c.effect,glitchType=c.glitchType
-                ) for c in p.hand.non_objective_cards],
+                non_objective_cards=[_non_objective_card_to_proto(c) for c in p.hand.non_objective_cards],
                 objective_cards=[pb.ObjectiveCard(
                     name=c.name, description=c.description,
                     responsibility=c.responsibility, effect=c.effect,
@@ -61,6 +86,7 @@ def _to_proto_state(game: Game) -> pb.GameState:
 
 
 def _broadcast(game_id: str, game: Game) -> pb.GameState:
+    """Push the current state to every watcher of this game. Caller must hold the game's lock."""
     state = _to_proto_state(game)
     for q in _watchers.get(game_id, []):
         q.put(state)
@@ -72,16 +98,19 @@ def _broadcast(game_id: str, game: Game) -> pb.GameState:
 class LobbyServicer(pb_grpc.LobbyServicer):
 
     def CreateGame(self, request, context):
-        with _lock:
-            game_id = str(uuid.uuid4())[:8]
+        game_id = str(uuid.uuid4())[:8]
+        with _registry_lock:
             _games[game_id] = Game(game_id)
+            _game_locks[game_id] = threading.Lock()
             _watchers[game_id] = []
-            print(f"[server] Game created: {game_id}")
-            return _to_proto_state(_games[game_id])
+        print(f"[server] Game created: {game_id}")
+        game, lock = _get_game_and_lock(game_id, context)
+        with lock:
+            return _to_proto_state(game)
 
     def JoinGame(self, request, context):
-        with _lock:
-            game = _get_game(request.game_id, context)
+        game, lock = _get_game_and_lock(request.game_id, context)
+        with lock:
             if any(p.name == request.player_name for p in game.players):
                 context.abort(grpc.StatusCode.ALREADY_EXISTS, f"Name '{request.player_name}' is already taken")
             player = GamePlayer(request.player_name)
@@ -90,8 +119,8 @@ class LobbyServicer(pb_grpc.LobbyServicer):
             return pb.JoinResponse(player_id=player.id, state=_broadcast(game.id, game))
 
     def StartGame(self, request, context):
-        with _lock:
-            game = _get_game(request.game_id, context)
+        game, lock = _get_game_and_lock(request.game_id, context)
+        with lock:
             if game.status != GameStats.LOBBY:
                 return _to_proto_state(game)
             game.setup_game()
@@ -99,39 +128,64 @@ class LobbyServicer(pb_grpc.LobbyServicer):
             return _broadcast(game.id, game)
 
     def WatchGame(self, request, context):
-        with _lock:
-            game = _get_game(request.game_id, context)
-            q = queue.Queue()
-            _watchers[request.game_id].append(q)
-            # Send current state immediately so the client is in sync on connect
-            q.put(_to_proto_state(game))
+        """
+        Streams state to one watcher until it disconnects. The game's lock
+        is only held for the brief register/unregister steps below — never
+        for the streaming loop itself, since that runs for the connection's
+        entire lifetime and must not block other clients' requests.
+        """
+        game_id, player_id = request.game_id, request.player_id
+        q = self._register_watcher(game_id, player_id, context)
         try:
-            while context.is_active():
-                try:
-                    state = q.get(timeout=1)
-                    yield state
-                except queue.Empty:
-                    continue
+            yield from self._stream_from_queue(q, context)
         finally:
-            with _lock:
-                _watchers[request.game_id].remove(q)
-                game = _games.get(request.game_id)
-                if (game and game.status == GameStats.PLAYING
-                        and game.get_current_player().id == request.player_id):
-                    game.pass_turn()
-                    _broadcast(request.game_id, game)
-                    print(f"[server] {request.player_id} disconnected — turn auto-skipped")
+            self._unregister_watcher(game_id, player_id, q)
+
+    def _register_watcher(self, game_id, player_id, context) -> queue.Queue:
+        """Briefly locks the game to add a new watcher queue and get an initial snapshot."""
+        game, lock = _get_game_and_lock(game_id, context)
+        q = queue.Queue()
+        with lock:
+            _watchers[game_id].append(q)
+            q.put(_to_proto_state(game))  # sync new watcher immediately
+        return q
+
+    @staticmethod
+    def _stream_from_queue(q: queue.Queue, context):
+        """Runs unlocked for the connection's duration — never touches game/registry state directly."""
+        while context.is_active():
+            try:
+                yield q.get(timeout=1)
+            except queue.Empty:
+                continue
+
+    def _unregister_watcher(self, game_id, player_id, q: queue.Queue) -> None:
+        """Briefly locks the game to remove this watcher and auto-skip its turn if needed."""
+        with _registry_lock:
+            game = _games.get(game_id)
+            lock = _game_locks.get(game_id)
+        if not game:
+            return
+        with lock:
+            if q in _watchers.get(game_id, []):
+                _watchers[game_id].remove(q)
+            if (game.status == GameStats.PLAYING
+                    and game.get_current_player().id == player_id):
+                game.pass_turn()
+                _broadcast(game_id, game)
+                print(f"[server] {player_id} disconnected — turn auto-skipped")
 
 
 class GameServicer(pb_grpc.GameServicer):
 
     def GetState(self, request, context):
-        with _lock:
-            return _to_proto_state(_get_game(request.game_id, context))
+        game, lock = _get_game_and_lock(request.game_id, context)
+        with lock:
+            return _to_proto_state(game)
 
     def PlayTurn(self, request, context):
-        with _lock:
-            game = _get_game(request.game_id, context)
+        game, lock = _get_game_and_lock(request.game_id, context)
+        with lock:
             player = _find_player(game, request.player_id)
             if player.id != game.get_current_player().id:
                 context.abort(grpc.StatusCode.FAILED_PRECONDITION, "It is not your turn")
@@ -146,33 +200,33 @@ class GameServicer(pb_grpc.GameServicer):
             return pb.TurnResult(**result, new_state=_to_proto_state(game))
 
     def DiscardCard(self, request, context):
-        with _lock:
-            game = _get_game(request.game_id, context)
+        game, lock = _get_game_and_lock(request.game_id, context)
+        with lock:
             player = _find_player(game, request.player_id)
             try:
                 card = player.hand.non_objective_cards[request.card_index]
-                player.hand.non_objective_cards.remove(card)
-                game.discard_pile.add(card)
             except IndexError:
                 context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Invalid card index")
+                return
+            game.discard_card(player, card)
             return _broadcast(game.id, game)
 
     def DrawCards(self, request, context):
-        with _lock:
-            game = _get_game(request.game_id, context)
+        game, lock = _get_game_and_lock(request.game_id, context)
+        with lock:
             player = _find_player(game, request.player_id)
             game.draw_cards(player, 2)
             return _broadcast(game.id, game)
 
     def SkipTurn(self, request, context):
-        with _lock:
-            game = _get_game(request.game_id, context)
+        game, lock = _get_game_and_lock(request.game_id, context)
+        with lock:
             game.pass_turn()
             return _broadcast(game.id, game)
 
     def LeaveGame(self, request, context):
-        with _lock:
-            game = _get_game(request.game_id, context)
+        game, lock = _get_game_and_lock(request.game_id, context)
+        with lock:
             player = _find_player(game, request.player_id)
             game.players.remove(player)
             if player in game.turn_order:

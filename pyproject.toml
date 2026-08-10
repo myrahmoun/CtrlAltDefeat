@@ -1,0 +1,6 @@
+[project]
+name = "beanbag"
+version = "0.1.0"
+
+[tool.setuptools]
+packages = ["src", "proto", "server", "client"]

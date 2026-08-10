@@ -8,17 +8,18 @@ from enum import Enum
 import json
 import random
 
-from board import Board
-from cardpile import CardPile, CardPileTypes
-from player import Player
-from cards import ActionCard, GlitchCard, ObjectiveCard, CardCategory
-from die import Die
-from operation import Operation, LoseTurnException
+from src.board import Board
+from src.cardpile import CardPile, CardPileTypes
+from src.player import Player
+from src.cards import ActionCard, GlitchCard, ObjectiveCard, CardCategory
+from src.die import Die
+from src.operation import Operation, LoseTurnException
 
 
 # Game files
-ACTION_CARDS_FILE = Path(__file__).parent / "data" / "full_action_cards.json"
-OBJECTIVE_CARDS_FILE = Path(__file__).parent / "data" / "full_objective_cards.json"
+DATA_DIR = Path(__file__).parent.parent / "data"
+ACTION_CARDS_FILE = DATA_DIR / "full_action_cards.json"
+OBJECTIVE_CARDS_FILE = DATA_DIR / "full_objective_cards.json"
 
 class GameStats(Enum):
     LOBBY = 1

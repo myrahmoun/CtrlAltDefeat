@@ -1,5 +1,5 @@
 from typing import List, Optional
-from cards import NonObjectiveCard, ObjectiveCard
+from src.cards import NonObjectiveCard, ObjectiveCard
 
 class Board:
     '''

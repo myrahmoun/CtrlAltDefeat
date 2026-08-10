@@ -1,8 +1,8 @@
 """
 Define, build and evaluate an operation.
 """
-import die
-import cards
+from src.die import Die
+import src.cards as cards
 
 class LoseTurnException(Exception):
     def __init__(self):
@@ -90,7 +90,7 @@ class Operation(object):
             self.objective is None):
             raise InvalidOperationException
 
-        die_roll = die.Die(6).roll()
+        die_roll = Die(6).roll()
         if self.responsibility > 3:
             return_val = self.effect
         elif self.responsibility > 0:
