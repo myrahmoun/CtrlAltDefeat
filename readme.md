@@ -42,6 +42,7 @@ You'll be prompted for the host's local IP and port (e.g. `192.168.1.10:50051`),
 
 ## Structure
 
+```
 root/
 ├── src/ core game logic, no networking or UI
 ├── proto/ gRPC service/message definitions and generated bindings
@@ -50,6 +51,7 @@ root/
 ├── data/ card definitions (JSON)
 ├── tests/ pytest tests
 └── docs/ design notes
+```
 
 | File | Purpose |
 | ------ | --------- |
