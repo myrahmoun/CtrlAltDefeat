@@ -155,16 +155,16 @@ class GameActionWorker(QObject):
             self.action_failed.emit(f"Couldn't draw: {e.details()}")
 
     @Slot(list)
-    def request_resolve_glitch_discard(self, card_indices: list) -> None:
+    def request_resolve_discard(self, card_indices: list) -> None:
         try:
-            result = self._game_stub.ResolveGlitchDiscard(pb.ResolveGlitchDiscardRequest(
+            result = self._game_stub.ResolveDiscard(pb.ResolveDiscardRequest(
                 game_id=self.game_id, player_id=self.player_id, card_indices=card_indices,
             ))
             if result.glitch_events:
                 self.glitch_events.emit(list(result.glitch_events))
             self.state_updated.emit(result.new_state)
         except grpc.RpcError as e:
-            self.action_failed.emit(f"Couldn't resolve glitch discard: {e.details()}")
+            self.action_failed.emit(f"Couldn't resolve discard: {e.details()}")
  
     @Slot()
     def request_skip(self) -> None:

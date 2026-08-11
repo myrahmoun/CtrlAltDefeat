@@ -50,7 +50,7 @@ class PlayerView:
     board_position: int
     lose_next_turn: bool
     hand: HandView
-    pending_glitch_discard: "dict | None"  # {"count": int, "target_category": str} or None
+    pending_discard: "dict | None"  # {"count": int, "target_category": str, "reason": str} or None
 
 
 @dataclass
@@ -109,10 +109,11 @@ def game_state_from_proto(state) -> GameStateView:
             PlayerView(
                 id=p.id, name=p.name, board_position=p.board_position,
                 lose_next_turn=p.lose_next_turn, hand=_hand_from_proto(p.hand),
-                pending_glitch_discard=(
-                    {"count": p.pending_glitch_discard.count,
-                     "target_category": p.pending_glitch_discard.target_category}
-                    if p.HasField("pending_glitch_discard") else None
+                pending_discard=(
+                    {"count": p.pending_discard.count,
+                     "target_category": p.pending_discard.target_category,
+                     "reason": p.pending_discard.reason}
+                    if p.HasField("pending_discard") else None
                 ),
             )
             for p in state.players

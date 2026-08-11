@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
     _draw_requested = Signal()
     _skip_requested = Signal()
     _leave_requested = Signal()
-    _resolve_glitch_discard_requested = Signal(list)
+    _resolve_discard_requested = Signal(list)
 
     def __init__(self, server_address: str):
         super().__init__()
@@ -84,10 +84,11 @@ class MainWindow(QMainWindow):
         self._pending_player_name: str | None = None
 
         # Tracks whether the hand widget is currently forced into the
-        # glitch-discard picker, so on_state_updated only calls set_mode on
-        # the transition edges (entering/leaving pending) rather than every
-        # broadcast, which would otherwise wipe an in-progress selection.
-        self._awaiting_glitch_discard = False
+        # discard picker (a Glitch Card or the hand limit), so
+        # on_state_updated only calls set_mode on the transition edges
+        # (entering/leaving pending) rather than every broadcast, which
+        # would otherwise wipe an in-progress selection.
+        self._awaiting_forced_discard = False
 
         self._setup_ui()
 
@@ -125,7 +126,7 @@ class MainWindow(QMainWindow):
         self._controls_widget.skip_clicked.connect(self.request_skip)
         self._hand_widget.play_selection_ready.connect(self._on_play_selection_ready)
         self._hand_widget.discard_selection_ready.connect(self._on_discard_selection_ready)
-        self._hand_widget.glitch_discard_selection_ready.connect(self._on_glitch_discard_selection_ready)
+        self._hand_widget.forced_discard_ready.connect(self._on_forced_discard_ready)
 
     # --- Action worker: exists for the app's whole lifetime ---
 
@@ -145,7 +146,7 @@ class MainWindow(QMainWindow):
         self._draw_requested.connect(self._action_worker.request_draw)
         self._skip_requested.connect(self._action_worker.request_skip)
         self._leave_requested.connect(self._action_worker.request_leave)
-        self._resolve_glitch_discard_requested.connect(self._action_worker.request_resolve_glitch_discard)
+        self._resolve_discard_requested.connect(self._action_worker.request_resolve_discard)
 
         # Worker -> UI
         self._action_worker.state_updated.connect(self.on_state_updated)
@@ -205,8 +206,8 @@ class MainWindow(QMainWindow):
     def request_leave(self) -> None:
         self._leave_requested.emit()
 
-    def request_resolve_glitch_discard(self, card_indices: list) -> None:
-        self._resolve_glitch_discard_requested.emit(card_indices)
+    def request_resolve_discard(self, card_indices: list) -> None:
+        self._resolve_discard_requested.emit(card_indices)
 
     # --- TEMPORARY: stands in for the lobby screen (see widgets/lobby_widget.py) ---
 
@@ -249,8 +250,8 @@ class MainWindow(QMainWindow):
     def _on_discard_selection_ready(self, card_index: int) -> None:
         self.request_discard(card_index)
 
-    def _on_glitch_discard_selection_ready(self, card_indices: list) -> None:
-        self.request_resolve_glitch_discard(card_indices)
+    def _on_forced_discard_ready(self, card_indices: list) -> None:
+        self.request_resolve_discard(card_indices)
 
     # --- Reactive handlers ---
 
@@ -266,27 +267,30 @@ class MainWindow(QMainWindow):
 
         me = view.player(self.player_id) if self.player_id else None
         is_my_turn = me is not None and view.current_player_id == self.player_id
-        pending = me.pending_glitch_discard if me is not None else None
+        pending = me.pending_discard if me is not None else None
         skip_turn = me.lose_next_turn if me is not None else False
-        # A pending glitch discard, or a turn already flagged to be
-        # skipped, both block normal turn actions — pending may be left
-        # over from this player's own last turn even if it's not currently
-        # their turn; skip_turn matters specifically when it IS their turn,
-        # since otherwise Play is already disabled by is_my_turn.
+        # A pending discard, or a turn already flagged to be skipped, both
+        # block normal turn actions — pending may be left over from this
+        # player's own last turn even if it's not currently their turn;
+        # skip_turn matters specifically when it IS their turn, since
+        # otherwise Play is already disabled by is_my_turn.
         self._controls_widget.set_my_turn(is_my_turn and pending is None and not skip_turn)
 
         if me is not None:
             self._hand_widget.update_from(me.hand)
             if pending is not None:
                 self._hand_widget.set_mode(
-                    "discard", count=pending["count"], category=pending["target_category"], is_glitch=True,
+                    "discard", count=pending["count"], category=pending["target_category"],
+                    reason=pending["reason"],
                 )
-                self._awaiting_glitch_discard = True
-            elif self._awaiting_glitch_discard:
+                self._awaiting_forced_discard = True
+            elif self._awaiting_forced_discard:
                 self._hand_widget.set_mode("play")
-                self._awaiting_glitch_discard = False
+                self._awaiting_forced_discard = False
 
-            if pending is not None:
+            if pending is not None and pending["reason"] == "hand_limit":
+                note = " — discard down to the 6-card hand limit"
+            elif pending is not None:
                 note = " — resolve your Glitch Card discard"
             elif is_my_turn and skip_turn:
                 note = " — this turn will be skipped"

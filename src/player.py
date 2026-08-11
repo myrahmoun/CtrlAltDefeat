@@ -28,9 +28,10 @@ class Player:
         self.lose_next_turn = False  # Flag for skip turn penalty
         self.playerStatus = "waiting"
 
-        # Set while a Glitch Card's discard effect is waiting on the player
-        # to choose which card(s) to discard; see Game.resolve_pending_glitch_discard.
-        self.pending_glitch_discard: Optional[dict] = None
+        # Set while the player owes a discard — either from a Glitch Card's
+        # discard effect or from exceeding the hand limit — and is waiting
+        # to choose which card(s) to discard; see Game.resolve_pending_discard.
+        self.pending_discard: Optional[dict] = None
 
     def __repr__(self)->str:
             return (

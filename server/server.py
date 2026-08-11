@@ -81,7 +81,7 @@ def _to_proto_state(game: Game) -> pb.GameState:
                     responsibility=c.responsibility, effect=c.effect,
                 ) for c in p.hand.objective_cards],
             ),
-            **({"pending_glitch_discard": p.pending_glitch_discard} if p.pending_glitch_discard else {}),
+            **({"pending_discard": p.pending_discard} if p.pending_discard else {}),
         ) for p in game.players],
     )
 
@@ -244,12 +244,12 @@ class GameServicer(pb_grpc.GameServicer):
                 return
             return pb.DrawResult(glitch_events=events, new_state=_broadcast(game.id, game))
 
-    def ResolveGlitchDiscard(self, request, context):
+    def ResolveDiscard(self, request, context):
         game, lock = _get_game_and_lock(request.game_id, context)
         with lock:
             player = _find_player(game, request.player_id)
             try:
-                events = game.resolve_pending_glitch_discard(player, list(request.card_indices))
+                events = game.resolve_pending_discard(player, list(request.card_indices))
             except (ValueError, IndexError) as e:
                 context.abort(grpc.StatusCode.FAILED_PRECONDITION, str(e))
                 return

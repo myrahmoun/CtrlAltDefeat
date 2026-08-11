@@ -23,8 +23,8 @@ service Game {
   rpc DrawCards  (DrawRequest)        returns (DrawResult);
   rpc LeaveGame  (LeaveRequest)       returns (GameState);
 
-  // Resolve a pending Glitch Card discard — see Player.pending_glitch_discard.
-  rpc ResolveGlitchDiscard (ResolveGlitchDiscardRequest) returns (DrawResult);
+  // Resolve a pending discard — see Player.pending_discard.
+  rpc ResolveDiscard (ResolveDiscardRequest) returns (DrawResult);
 }
 
 // ── Request / Response messages ───────────────────────────────────────────
@@ -65,7 +65,7 @@ message TurnResult {
   int32     effect         = 6;
   GameState new_state      = 7;
   // Glitch Cards resolved from the bonus draw (responsibility >= 4). See
-  // GlitchEvent and Player.pending_glitch_discard.
+  // GlitchEvent and Player.pending_discard.
   repeated GlitchEvent glitch_events = 8;
 }
 
@@ -80,12 +80,14 @@ message GlitchEvent {
   repeated string drawn_card_names = 6;
 }
 
-// A Glitch Card's discard effect waiting on the player to choose which
-// card(s) to discard. Presence on Player (proto3 message-field presence)
-// means there's a pending choice to resolve via ResolveGlitchDiscard.
-message PendingGlitchDiscard {
+// A discard the player owes — from a Glitch Card's discard effect or from
+// exceeding the hand limit — waiting on them to choose which card(s) to
+// discard. Presence on Player (proto3 message-field presence) means
+// there's a pending choice to resolve via ResolveDiscard.
+message PendingDiscard {
   int32  count           = 1;
   string target_category = 2;  // empty if not category-restricted
+  string reason          = 3;  // "glitch" | "hand_limit"
 }
 
 message DrawResult {
@@ -93,7 +95,7 @@ message DrawResult {
   GameState            new_state     = 2;
 }
 
-message ResolveGlitchDiscardRequest {
+message ResolveDiscardRequest {
   string         game_id      = 1;
   string         player_id    = 2;
   repeated int32 card_indices = 3;
@@ -141,7 +143,7 @@ message Player {
   int32  board_position = 3;
   bool   lose_next_turn = 4;
   Hand   hand           = 5;
-  PendingGlitchDiscard pending_glitch_discard = 6;
+  PendingDiscard pending_discard = 6;
 }
 
 message Hand {
