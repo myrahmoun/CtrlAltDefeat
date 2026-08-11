@@ -3,7 +3,7 @@
 conftest.py
 /tests
 /scripts
-/__pycache__
+*/__pycache__
 /.pytest_cache
 /docs
 beanbag.egg-info
