@@ -1,0 +1,542 @@
+[
+  {
+    "category": "Governance",
+    "name": "National Secuity Council",
+    "description": "Your operation follows National Security Council priorities, and therefore reacts to the most dangerous threats to the country, allowing you to focus on the correct targets",
+    "effect": 0,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Technology Degredation",
+    "description": "Hardware and software can sometimes be interfered with to behave in a degraded manner, reducing useer' trust in their systems",
+    "effect": 2,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Glitch",
+    "name": "Technology Fails",
+    "description": "In testing, you find that a capability being developed for your operation does not behave as expected.",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "Discard 1 Technology card",
+    "count": ""
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "Network Attack",
+    "description": "Attack the computer network of your target, stopping them from conducting their operations.",
+    "effect": 2,
+    "responsibility": -1,
+    "glitchType": "",
+    "count": 3
+  },
+  {
+    "category": "Intelligence",
+    "name": "Public Records",
+    "description": "Public records can contain vital intelligence, if you look closely enough.",
+    "effect": 0,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "data Encruption",
+    "description": "Encrypt your target's data, stopping them from gaining access to critical systems",
+    "effect": 1,
+    "responsibility": 0,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Email Spoofing",
+    "description": "It is sometimes possible to send an email to a target crafted to look as if it came from somebody else",
+    "effect": 0,
+    "responsibility": 0,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Intelligence",
+    "name": "Technical Reconnaisssance",
+    "description": "Covert technical access to a target's network increases understanding, making operations more precise and calibrated",
+    "effect": 2,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": 3
+  },
+  {
+    "category": "Governance",
+    "name": "Values and Ethics",
+    "description": "Your operations follow the principles of responsible behavior in cyberspace set out in Responsible Cybeer Power in Practice",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": 3
+  },
+  {
+    "category": "Glitch",
+    "name": "Approval Delay",
+    "description": "Your operation is held back at the approval stage",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "You cannot complete an operation this turn",
+    "count": ""
+  },
+  {
+    "category": "Glitch",
+    "name": "Com0romise",
+    "description": "Your ways of working have been exposed by another operation that went wrong",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "Discard 1 Technology Card",
+    "count": ""
+  },
+  {
+    "category": "Governance",
+    "name": "Ministerial Approval",
+    "description": "Your opeation is accountable to the Secretary of State and the Secretary of Defense",
+    "effect": 0,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Glitch",
+    "name": "Legislative Change",
+    "description": "You need time to understand the impact of recent legislative changes on your activities and policies",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "Discard 1 Governance Card",
+    "count": ""
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "Intelligence Release",
+    "description": "Obtain intelligence from your target and release it to the world",
+    "effect": 1,
+    "responsibility": -1,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Technology",
+    "name": "Reverse Engineering",
+    "description": "With access to harware or software used by a target, it can be reverse engineered to find bespoke vulnerabilities",
+    "effect": 3,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Intelligence",
+    "name": "Open Source Scanning",
+    "description": "Scan across the internet for servers, Internet of Things devices and industrial controllers",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": 3
+  },
+  {
+    "category": "Glitch",
+    "name": "International Agreement Published",
+    "description": "The government porvides clarity on the nations cyber effects policy position",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "Draw 2 Action Cards",
+    "count": 2
+  },
+  {
+    "category": "Governance",
+    "name": "Legal Authority",
+    "description": "Your operation is carried out in accordance with both domestic and international law",
+    "effect": 0,
+    "responsibility": 2,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Technology",
+    "name": "Access to Data",
+    "description": "By targeting data stores, it is possible to obtain a target's private information, or otherwise correupt it",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Intelligence",
+    "name": "Agent Recruitment",
+    "description": "Recruiting an agent withing an organisation allows you to understand more about the target, increasing effectiveness and recuding the risk of unintended consequences",
+    "effect": 1,
+    "responsibility": 2,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Technology",
+    "name": "Covert Influence",
+    "description": "Covert techniques can be used to reach out to an individual who poses a significant threat and seek to influence their actions ina positive way",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Governance",
+    "name": "Learning Culture",
+    "description": "Your team share best practices to learn from experience, meaning that your operation is designed to be as effetive and responsible as it can be",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Credential Theft",
+    "description": "By obtaining the credentials of a target user, it is possible to log in as them",
+    "effect": 3,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Intelligence",
+    "name": "Signals Intelligence",
+    "description": "Intellegence agencies routinely collect intelligence through the internet to protect national security, detect and prevent serious crime, and preserve economic wellbeing",
+    "effect": 2,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": 4
+  },
+  {
+    "category": "Governance",
+    "name": "Independent Oversight",
+    "description": "Your operation is overseen by the independent office of the Investigatory Powers Commissioner, ensuring your operation meets the UK’s commitment to acting responsibly in cyberspace.",
+    "effect": 0,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Technology",
+    "name": "Kill Switch",
+    "description": "Hostile malware sometimes has a secret function which disables it, if it can be found.",
+    "effect": 3,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "CNI Attack",
+    "description": "Disrupt a pipeline which supplies your target with fuel, temporarily stopping their operations.",
+    "effect": 2,
+    "responsibility": -2,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Technology",
+    "name": "Default Passwords",
+    "description": "The target has not set strong passwords on their key systems, allowing easy login and control. Default passwords are freely! available on the internet.",
+    "effect": 0,
+    "responsibility": 0,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Governance",
+    "name": "Cautious",
+    "description": "A cautious and hesitant government means that your ability to operate may be constrained or limited.",
+    "effect": -2,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Governance",
+    "name": "Questionable Values and Ethics",
+    "description": "You carry out your cyber activities with little regard for wider consequences.",
+    "effect": 0,
+    "responsibility": -2,
+    "glitchType": "",
+    "count": 3
+  },
+  {
+    "category": "Governance",
+    "name": "Lack of Oversight",
+    "description": "You operate independently, with no oversight from independent democratic bodies.",
+    "effect": 0,
+    "responsibility": -2,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "counter Propaganda",
+    "description": "Use your online skills to stop your target’s propaganda.",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Internet of Things Device Attack",
+    "description": "A target’s loT devices, such as home appliances, are often insecure and can be compromised easily.",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "Socail Media Botnet",
+    "description": "Spread your desired message to a target through a series of fake accounts on social media.",
+    "effect": 2,
+    "responsibility": -1,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Technology",
+    "name": "Manipulaltion of Data",
+    "description": "Target individuals and groups rely on data to make decisions. By targeting their storage, transmission and processing of data, it is possible to interfere with decision making.",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Intelligence",
+    "name": "Communications Intercept",
+    "description": "By compromising the servers of target communications providers, it is possible to intercept messages.",
+    "effect": 2,
+    "responsibility": 0,
+    "glitchType": "",
+    "count": 3
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "CNI Pre-positioning",
+    "description": "Gain access to a critical system of your target, ready to respond to any attacks by them.",
+    "effect": 1,
+    "responsibility": 0,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Backdoor",
+    "description": "Backdoors in software allow you to run code or install other software that users are not aware of.",
+    "effect": 2,
+    "responsibility": 0,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Intelligence",
+    "name": "Partners",
+    "description": "Working with international and other government partners increases the amount of knowledge available on a target.",
+    "effect": 1,
+    "responsibility": 2,
+    "glitchType": "",
+    "count": 3
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "Data Manipulation",
+    "description": "Hack into your target’s systems and change the data inside.",
+    "effect": 1,
+    "responsibility": -1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Disrupting Communication Devices",
+    "description": "Interfering with communication devices can result in a target not being able to communicate with their accomplices.",
+    "effect": 1,
+    "responsibility": 0,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "Software Supply Chain Attack",
+    "description": "Gain access into a company supplying software to your target, then launch operations from there.",
+    "effect": 2,
+    "responsibility": -1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Digital Communications Systems Disruption",
+    "description": "Some digital communications systems are susceptible to cyber attack, which can render them degraded or inoperable.",
+    "effect": 2,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Glitch",
+    "name": "Operation Review",
+    "description": "A member of staff raises an issue with your operation at the planning stage which you need to rectify.",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "You cannot complete an operation this turn",
+    "count": ""
+  },
+  {
+    "category": "Glitch",
+    "name": "Disclose a Zero Day Exploit",
+    "description": "Your equities board decides you must reveal your zero day exploit to keep others safe.",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "Discard 1 Technology card",
+    "count": ""
+  },
+  {
+    "category": "Governance",
+    "name": "Parliamentary Scrutiny",
+    "description": "The Intelligence and Security Committee of the UK’s Parliament is accountable for overseeing the conduct of your cyber operation.",
+    "effect": 0,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Hardware Supply Chain Attack",
+    "description": "By modifying technology before it is delivered to a target, it is possible to add functionality the end user is not aware of.",
+    "effect": 2,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Glitch",
+    "name": "Resource Reshuffle",
+    "description": "Resources are reassigned in your favour.",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "Draw 2 Action Cards",
+    "count": ""
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "Industrial Attack",
+    "description": "Hack into the control systems of a target factory and cause damage to the production line.",
+    "effect": 2,
+    "responsibility": -2,
+    "glitchType": "",
+    "count": 2
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "Information Release",
+    "description": "Find information about your target and release it on the internet.",
+    "effect": 1,
+    "responsibility": -1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Glitch",
+    "name": "Resource Reshuffle",
+    "description": "Resources are reassigned due to a crisis event.",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "Discard 1 Action Card",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Online Influence",
+    "description": "Online engagement can be used to reach out to an individual who poses a significant threat and seek to influence their actions in a positive way.",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Zero Day",
+    "description": "A previously undocumented vulnerability. Using it is effective, although it could be exploited by other less responsible actors in the future.",
+    "effect": 3,
+    "responsibility": 0,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Clandestine Technology",
+    "description": "Air-gapped or hardened networks can be accessed by installing bespoke technology on the network using clandestine techniques.",
+    "effect": 3,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Glitch",
+    "name": "Budget Increase",
+    "description": "A recent spending increase from the government speeds up your development work.",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "Draw 2 Action Cards",
+    "count": ""
+  },
+  {
+    "category": "Technology",
+    "name": "Code Injection",
+    "description": "Some websites or services will run any code that is passed in by a user. This can be used to compromise or break a target system.",
+    "effect": 2,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "Information Release",
+    "description": "Break into your target’s emails and release them to journalists.",
+    "effect": 2,
+    "responsibility": 0,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Cybersecurity",
+    "name": "Denial of Service",
+    "description": "Overwhelm a target system with vast amounts of specially created internet traffic.",
+    "effect": 1,
+    "responsibility": -1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Governance",
+    "name": "Risk Management",
+    "description": "A strong risk management framework minimises the likelihood of unintended consequences and increases precision.",
+    "effect": 1,
+    "responsibility": 1,
+    "glitchType": "",
+    "count": ""
+  },
+  {
+    "category": "Glitch",
+    "name": "Keep a Zero Day Exploit",
+    "description": "Your equities board decides you can keep your zero day exploit a secret.",
+    "effect": "",
+    "responsibility": "",
+    "glitchType": "Draw 2 Action Cards",
+    "count": ""
+  }
+]

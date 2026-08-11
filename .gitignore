@@ -1,7 +1,6 @@
 /.venv
 .DS_Store
 conftest.py
-/data
 /tests
 /scripts
 /__pycache__

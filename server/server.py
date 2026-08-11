@@ -81,6 +81,7 @@ def _to_proto_state(game: Game) -> pb.GameState:
                     responsibility=c.responsibility, effect=c.effect,
                 ) for c in p.hand.objective_cards],
             ),
+            **({"pending_glitch_discard": p.pending_glitch_discard} if p.pending_glitch_discard else {}),
         ) for p in game.players],
     )
 
@@ -208,7 +209,11 @@ class GameServicer(pb_grpc.GameServicer):
                 context.abort(grpc.StatusCode.FAILED_PRECONDITION, "It is not your turn")
             obj = player.hand.objective_cards[request.objective_index]
             actions = [player.hand.non_objective_cards[i] for i in request.action_indices]
-            result = game.execute_turn(player, obj, actions)
+            try:
+                result = game.execute_turn(player, obj, actions)
+            except ValueError as e:
+                context.abort(grpc.StatusCode.FAILED_PRECONDITION, str(e))
+                return
             _broadcast(game.id, game)
             if result is None:
                 if game.status == GameStats.FINISHED:
@@ -232,8 +237,23 @@ class GameServicer(pb_grpc.GameServicer):
         game, lock = _get_game_and_lock(request.game_id, context)
         with lock:
             player = _find_player(game, request.player_id)
-            game.draw_cards(player, 2)
-            return _broadcast(game.id, game)
+            try:
+                events = game.draw_and_resolve_glitches(player, 2)
+            except ValueError as e:
+                context.abort(grpc.StatusCode.FAILED_PRECONDITION, str(e))
+                return
+            return pb.DrawResult(glitch_events=events, new_state=_broadcast(game.id, game))
+
+    def ResolveGlitchDiscard(self, request, context):
+        game, lock = _get_game_and_lock(request.game_id, context)
+        with lock:
+            player = _find_player(game, request.player_id)
+            try:
+                events = game.resolve_pending_glitch_discard(player, list(request.card_indices))
+            except (ValueError, IndexError) as e:
+                context.abort(grpc.StatusCode.FAILED_PRECONDITION, str(e))
+                return
+            return pb.DrawResult(glitch_events=events, new_state=_broadcast(game.id, game))
 
     def SkipTurn(self, request, context):
         game, lock = _get_game_and_lock(request.game_id, context)

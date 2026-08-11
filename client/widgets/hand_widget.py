@@ -7,11 +7,15 @@ Two selection modes, switched via set_mode():
   - "play": select 1 objective + 1 action card per required category (4
     total). Emits play_selection_ready(objective_index, action_indices)
     once a complete, valid selection is made.
-  - "discard": select exactly 1 non-objective card. Emits
-    discard_selection_ready(card_index) once one is picked.
+  - "discard": select `count` non-objective card(s), optionally restricted
+    to one `category`. Emits discard_selection_ready(card_index) for the
+    default count=1/no-category voluntary case, or
+    glitch_discard_selection_ready(card_indices) when is_glitch=True (a
+    Glitch Card's discard effect forcing a specific count/category).
 
-MainWindow reads these signals and turns them into request_play_turn /
-request_discard calls — this widget never talks to the network layer.
+MainWindow reads these signals and turns them into request_discard /
+request_resolve_glitch_discard calls — this widget never talks to the
+network layer.
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
@@ -21,8 +25,9 @@ REQUIRED_CATEGORIES = {"Intelligence", "Technology", "Governance", "Cybersecurit
 
 
 class HandWidget(QWidget):
-    play_selection_ready = Signal(int, list)   # objective_index, action_indices
-    discard_selection_ready = Signal(int)      # card_index
+    play_selection_ready = Signal(int, list)           # objective_index, action_indices
+    discard_selection_ready = Signal(int)               # card_index
+    glitch_discard_selection_ready = Signal(list)       # card_indices
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -30,6 +35,9 @@ class HandWidget(QWidget):
         self._hand = None  # view_model.HandView
         self._selected_objective_index = None
         self._selected_action_indices = set()
+        self._discard_count = 1
+        self._discard_category = ""
+        self._is_glitch_discard = False
 
         outer = QVBoxLayout(self)
         self._status_label = QLabel("")
@@ -45,10 +53,18 @@ class HandWidget(QWidget):
         self._confirm_button.clicked.connect(self._on_confirm_clicked)
         outer.addWidget(self._confirm_button)
 
-    def set_mode(self, mode: str) -> None:
-        """mode: 'play' or 'discard'"""
+    def set_mode(self, mode: str, *, count: int = 1, category: str = "", is_glitch: bool = False) -> None:
+        """
+        mode: 'play' or 'discard'. count/category/is_glitch only matter for
+        'discard': how many cards must be picked, whether they're
+        restricted to one category, and whether confirming emits
+        glitch_discard_selection_ready instead of discard_selection_ready.
+        """
         assert mode in ("play", "discard")
         self._mode = mode
+        self._discard_count = count
+        self._discard_category = category
+        self._is_glitch_discard = is_glitch
         self._selected_objective_index = None
         self._selected_action_indices = set()
         self._render()
@@ -92,7 +108,11 @@ class HandWidget(QWidget):
                 btn.setChecked(i in self._selected_action_indices)
                 btn.clicked.connect(lambda _checked, idx=i: self._toggle_action(idx))
             else:  # discard mode
-                btn.clicked.connect(lambda _checked, idx=i: self._select_discard(idx))
+                btn.setChecked(i in self._selected_action_indices)
+                if self._discard_category and getattr(card, "category", None) != self._discard_category:
+                    btn.setEnabled(False)
+                else:
+                    btn.clicked.connect(lambda _checked, idx=i: self._select_discard(idx))
             self._action_row.addWidget(btn)
 
         self._update_status_and_confirm()
@@ -117,8 +137,11 @@ class HandWidget(QWidget):
 
     def _select_discard(self, index: int) -> None:
         self._selected_objective_index = None
-        self._selected_action_indices = {index}
-        self._update_status_and_confirm()
+        if index in self._selected_action_indices:
+            self._selected_action_indices.discard(index)
+        elif len(self._selected_action_indices) < self._discard_count:
+            self._selected_action_indices.add(index)
+        self._render()
 
     def _selected_categories_valid(self) -> bool:
         if len(self._selected_action_indices) != 4:
@@ -136,8 +159,14 @@ class HandWidget(QWidget):
             )
             self._confirm_button.setEnabled(ready)
         else:
-            ready = len(self._selected_action_indices) == 1
-            self._status_label.setText("Select a card to discard.")
+            ready = len(self._selected_action_indices) == self._discard_count
+            category_note = f" {self._discard_category}" if self._discard_category else ""
+            plural = "s" if self._discard_count != 1 else ""
+            prefix = "Glitch Card: you must discard" if self._is_glitch_discard else "Select"
+            self._status_label.setText(
+                f"{prefix} {self._discard_count}{category_note} card{plural} to discard "
+                f"({len(self._selected_action_indices)}/{self._discard_count} selected)."
+            )
             self._confirm_button.setEnabled(ready)
 
     def _on_confirm_clicked(self) -> None:
@@ -145,6 +174,8 @@ class HandWidget(QWidget):
             self.play_selection_ready.emit(
                 self._selected_objective_index, sorted(self._selected_action_indices)
             )
+        elif self._is_glitch_discard:
+            self.glitch_discard_selection_ready.emit(sorted(self._selected_action_indices))
         else:
             (index,) = self._selected_action_indices
             self.discard_selection_ready.emit(index)

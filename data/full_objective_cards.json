@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Expose State Threats",
+    "description": "State threats include the use of spies to influence others. Cyber operations can expose the threat from this activity to prevent it happening again.",
+    "effect": 2,
+    "responsibility": 1,
+    "": "",
+    "__1": ""
+  },
+  {
+    "name": "Counter Disinformation",
+    "description": "Countering disinformation efforts by rogue actors allows for the truth to be understood, and for people to make their own informed decisions.",
+    "effect": 2,
+    "responsibility": 1,
+    "": 2,
+    "__1": ""
+  },
+  {
+    "name": "Protect Military Operations",
+    "description": "A nation’s military carries some of the most sensitive and dangerous technologies. Protecting these from threats through cyber operations will ensure they remain effective.",
+    "effect": 5,
+    "responsibility": 0,
+    "": "",
+    "__1": ""
+  },
+  {
+    "name": "Disrupt a Terrorist Group",
+    "description": "Terrorist groups represent a serious threat to security. Disrupting these groups makes the nation safer and more secure.",
+    "effect": 4,
+    "responsibility": 2,
+    "": "",
+    "__1": ""
+  },
+  {
+    "name": "Disrupt State Threats",
+    "description": "Rogue or malign states seek to do damage to others. Through cyber means, they can be constrained and deterred from their activities.",
+    "effect": 5,
+    "responsibility": 0,
+    "": 2,
+    "__1": ""
+  },
+  {
+    "name": "Influence Behaviours of Hostile Actors",
+    "description": "Hostile actors can be persuaded to take other actions or change their plans as a result of cyber influence.",
+    "effect": 3,
+    "responsibility": 0,
+    "": 2,
+    "__1": ""
+  },
+  {
+    "name": "Prevent Cyber Attacks",
+    "description": "Nations, criminals, and hacktivists carry out attacks on innocent victims. Preventing these makes the world more secure.",
+    "effect": 2,
+    "responsibility": 2,
+    "": 2,
+    "__1": ""
+  },
+  {
+    "name": "Protect Military Operations",
+    "description": "A nation’s military carries some of the most sensitive and dangerous technologies. Protecting these from threats through cyber operations will ensure they remain effective.",
+    "effect": 5,
+    "responsibility": 0,
+    "": "",
+    "__1": ""
+  },
+  {
+    "name": "Expose State Threats",
+    "description": "State threats include the use of spies to influence others. Cyber operations can expose the threat from this activity to prevent it happening again.",
+    "effect": 2,
+    "responsibility": 1,
+    "": "",
+    "__1": ""
+  },
+  {
+    "name": "Disrupt a Terrorist Group",
+    "description": "Terrorist groups represent a serious threat to security. Disrupting these groups makes the nation safer and more secure.",
+    "effect": 4,
+    "responsibility": 2,
+    "": "",
+    "__1": ""
+  },
+  {
+    "name": "Disrupt Online Criminals",
+    "description": "Stopping online criminals from carrying out their operations means innocent people can use the internet safely.",
+    "effect": 3,
+    "responsibility": 1,
+    "": 2,
+    "__1": ""
+  },
+  {
+    "name": "Expose Illegal Activity",
+    "description": "Exposing the activities of criminals, either publicly or privately, reduces the likelihood of them carrying out illegal actions: in the future.",
+    "effect": 3,
+    "responsibility": 0,
+    "": "",
+    "__1": 2
+  },
+  {
+    "name": "Counter Hostle Malware",
+    "description": "Uncontrolled malware is used across the world to do damage. Cyber operations can control the spread of malware and protect people.",
+    "effect": 3,
+    "responsibility": 1,
+    "": "",
+    "__1": 2
+  },
+  {
+    "name": "Support Law Enforcement",
+    "description": "Cyber operations can be used to track down criminals, expose their activities and protect innocent people.",
+    "effect": 4,
+    "responsibility": 1,
+    "": "",
+    "__1": 2
+  },
+  {
+    "name": "Support to Military Operations",
+    "description": "Cyber operations can support and protect military operations to help them safely meet their mission objectives, giving military commanders a wider set of options for force protection.",
+    "effect": 6,
+    "responsibility": 0,
+    "": "",
+    "__1": 2
+  }
+]

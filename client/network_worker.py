@@ -68,6 +68,7 @@ class GameActionWorker(QObject):
     # --- Outgoing: worker -> UI ---
     state_updated = Signal(object)      # carries a pb.GameState
     turn_result = Signal(object)        # carries a pb.TurnResult
+    glitch_events = Signal(object)      # carries a list of pb.GlitchEvent
     action_failed = Signal(str)
     game_created = Signal(str)          # carries the new game_id
     joined = Signal(str)                # carries the assigned player_id
@@ -144,12 +145,26 @@ class GameActionWorker(QObject):
     @Slot()
     def request_draw(self) -> None:
         try:
-            state = self._game_stub.DrawCards(pb.DrawRequest(
+            result = self._game_stub.DrawCards(pb.DrawRequest(
                 game_id=self.game_id, player_id=self.player_id,
             ))
-            self.state_updated.emit(state)
+            if result.glitch_events:
+                self.glitch_events.emit(list(result.glitch_events))
+            self.state_updated.emit(result.new_state)
         except grpc.RpcError as e:
             self.action_failed.emit(f"Couldn't draw: {e.details()}")
+
+    @Slot(list)
+    def request_resolve_glitch_discard(self, card_indices: list) -> None:
+        try:
+            result = self._game_stub.ResolveGlitchDiscard(pb.ResolveGlitchDiscardRequest(
+                game_id=self.game_id, player_id=self.player_id, card_indices=card_indices,
+            ))
+            if result.glitch_events:
+                self.glitch_events.emit(list(result.glitch_events))
+            self.state_updated.emit(result.new_state)
+        except grpc.RpcError as e:
+            self.action_failed.emit(f"Couldn't resolve glitch discard: {e.details()}")
  
     @Slot()
     def request_skip(self) -> None:

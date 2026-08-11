@@ -20,8 +20,11 @@ service Game {
   rpc DiscardCard(DiscardRequest)    returns (GameState);
   rpc SkipTurn   (SkipRequest)       returns (GameState);
 
-  rpc DrawCards  (DrawRequest)        returns (GameState);
+  rpc DrawCards  (DrawRequest)        returns (DrawResult);
   rpc LeaveGame  (LeaveRequest)       returns (GameState);
+
+  // Resolve a pending Glitch Card discard — see Player.pending_glitch_discard.
+  rpc ResolveGlitchDiscard (ResolveGlitchDiscardRequest) returns (DrawResult);
 }
 
 // ── Request / Response messages ───────────────────────────────────────────
@@ -61,6 +64,39 @@ message TurnResult {
   int32     responsibility = 5;
   int32     effect         = 6;
   GameState new_state      = 7;
+  // Glitch Cards resolved from the bonus draw (responsibility >= 4). See
+  // GlitchEvent and Player.pending_glitch_discard.
+  repeated GlitchEvent glitch_events = 8;
+}
+
+// One resolved Glitch Card: what it was and what happened when it was
+// played. drawn_card_names is only populated for a "draw" effect_type.
+message GlitchEvent {
+  string         name              = 1;
+  string         description       = 2;
+  string         effect_type       = 3;  // "discard" | "draw" | "skip_operation"
+  int32          count             = 4;
+  string         target_category   = 5;  // empty if not category-restricted
+  repeated string drawn_card_names = 6;
+}
+
+// A Glitch Card's discard effect waiting on the player to choose which
+// card(s) to discard. Presence on Player (proto3 message-field presence)
+// means there's a pending choice to resolve via ResolveGlitchDiscard.
+message PendingGlitchDiscard {
+  int32  count           = 1;
+  string target_category = 2;  // empty if not category-restricted
+}
+
+message DrawResult {
+  repeated GlitchEvent glitch_events = 1;
+  GameState            new_state     = 2;
+}
+
+message ResolveGlitchDiscardRequest {
+  string         game_id      = 1;
+  string         player_id    = 2;
+  repeated int32 card_indices = 3;
 }
 
 message DiscardRequest {
@@ -105,6 +141,7 @@ message Player {
   int32  board_position = 3;
   bool   lose_next_turn = 4;
   Hand   hand           = 5;
+  PendingGlitchDiscard pending_glitch_discard = 6;
 }
 
 message Hand {

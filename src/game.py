@@ -11,7 +11,7 @@ import random
 from src.board import Board
 from src.cardpile import CardPile, CardPileTypes
 from src.player import Player
-from src.cards import ActionCard, GlitchCard, ObjectiveCard, CardCategory
+from src.cards import ActionCard, GlitchCard, ObjectiveCard, CardCategory, GlitchEffectType
 from src.die import Die
 from src.operation import Operation, LoseTurnException
 
@@ -32,6 +32,7 @@ class Game():
     Owns and drives a single game's state: the board, players, card piles,
     turn order, and the rules for setting up, progressing, and ending a game.
     """
+    _MAX_GLITCH_CHAIN = 50  # guards against a pathological all-glitch remaining deck
 
     def __init__(self, game_id: str) -> None:
         """Create a new game in LOBBY status with empty piles and no players yet."""
@@ -164,12 +165,17 @@ class Game():
 
         Returns the operation result dict (see _execute_operation), or None
         if the turn was skipped or the game just ended.
-        Raises ValueError if not given exactly 4 action cards and 1 objective.
+        Raises ValueError if not given exactly 4 action cards and 1
+        objective, or if the player has a pending glitch discard to resolve
+        first (see resolve_pending_glitch_discard).
         """
         if player.lose_next_turn:
             player.lose_next_turn = False
             self.next_turn()
             return
+
+        if player.pending_glitch_discard is not None:
+            raise ValueError(f"{player.name} must resolve a pending glitch discard first")
 
         if len(actions) != 4 or not objective:
             raise ValueError("Need exactly 4 action cards and 1 objective card")
@@ -206,7 +212,8 @@ class Game():
         LoseTurnException.
 
         Returns a dict describing the outcome: responsibility, effect,
-        success, spaces_moved, bonus, and lose_turn.
+        success, spaces_moved, bonus, lose_turn, and glitch_events (any
+        Glitch Cards resolved from the bonus draw — see _resolve_glitches).
         """
         operation = Operation(objective)
         for action in actions:
@@ -219,6 +226,7 @@ class Game():
             'spaces_moved': 0,
             'bonus': False,
             'lose_turn': False,
+            'glitch_events': [],
         }
 
         try:
@@ -230,7 +238,7 @@ class Game():
             if operation.responsibility >= 4:
                 player.board_position = min(player.board_position + 1, 19)
                 result['bonus'] = True
-                self.draw_cards(player, 2)
+                result['glitch_events'] = self.draw_and_resolve_glitches(player, 2)
 
         except LoseTurnException:
             player.lose_next_turn = True
@@ -255,13 +263,116 @@ class Game():
         """
         Draw `count` cards from the action pile into the player's hand,
         refilling the action pile from the discard pile if it runs out
-        mid-draw.
+        mid-draw. Does not resolve any Glitch Cards drawn — see
+        draw_and_resolve_glitches for the version that does.
         """
         for _ in range(count):
             self._refill_if_empty(self.action_pile)
             card = self.action_pile.draw()
             if card:
                 player.hand.non_objective_cards.append(card)
+
+    def draw_and_resolve_glitches(self, player: Player, count: int = 2) -> list:
+        """
+        Draw `count` cards, then immediately resolve any Glitch Cards among
+        them: each is discarded after applying its effect, and effects that
+        themselves draw cards can chain into further Glitch Cards, which are
+        resolved the same way until none remain in hand (instructions.md,
+        "Glitch Cards").
+
+        Returns a list of event dicts (see _resolve_glitches) describing
+        what happened, for the caller to relay to the player. If a discard
+        effect needs the player to choose which card(s) to discard,
+        resolution pauses there — player.pending_glitch_discard is set, and
+        the last event's effect_type is "discard" with no further events
+        following it until resolve_pending_glitch_discard is called.
+        Raises ValueError if the player already has a pending glitch discard.
+        """
+        if player.pending_glitch_discard is not None:
+            raise ValueError(f"{player.name} must resolve a pending glitch discard first")
+        self.draw_cards(player, count)
+        return self._resolve_glitches(player)
+
+    def _resolve_glitches(self, player: Player) -> list:
+        """
+        Play and discard Glitch Cards from the player's hand until none
+        remain, or until a discard effect needs the player's input (see
+        draw_and_resolve_glitches).
+        """
+        events = []
+        chain = 0
+        while True:
+            glitch = next((c for c in player.hand.non_objective_cards if isinstance(c, GlitchCard)), None)
+            if glitch is None:
+                return events
+            chain += 1
+            if chain > self._MAX_GLITCH_CHAIN:
+                return events
+
+            player.hand.non_objective_cards.remove(glitch)
+            self.discard_pile.add(glitch)
+
+            event = {
+                'name': glitch.name,
+                'description': glitch.description,
+                'effect_type': glitch.effect_type.value,
+                'count': glitch.count,
+                'target_category': glitch.target_category.value if glitch.target_category else "",
+                'drawn_card_names': [],
+            }
+
+            if glitch.effect_type == GlitchEffectType.DRAW:
+                before = len(player.hand.non_objective_cards)
+                self.draw_cards(player, glitch.count)
+                event['drawn_card_names'] = [c.name for c in player.hand.non_objective_cards[before:]]
+                events.append(event)
+
+            elif glitch.effect_type == GlitchEffectType.DISCARD:
+                events.append(event)
+                available = [c for c in player.hand.non_objective_cards
+                             if glitch.target_category is None or c.category == glitch.target_category]
+                if not available:
+                    continue  # nothing matches — nothing to pause for
+                player.pending_glitch_discard = {
+                    'count': min(glitch.count, len(available)),
+                    'target_category': event['target_category'],
+                }
+                return events  # caller must resolve this before we continue
+
+            elif glitch.effect_type == GlitchEffectType.SKIP_OPERATION:
+                # Reuses lose_next_turn: since this resolves during the
+                # current turn's draw phase, execute_turn's existing check
+                # at the top skips *this* turn, not a future one.
+                player.lose_next_turn = True
+                events.append(event)
+
+    def resolve_pending_glitch_discard(self, player: Player, card_indices: list) -> list:
+        """
+        Apply the player's chosen discards for a pending glitch-triggered
+        discard, then resume resolving any further Glitch Cards.
+        Returns the list of further glitch events (see _resolve_glitches).
+        Raises ValueError if there's no pending discard, the number of
+        chosen cards doesn't match what's required, a duplicate index is
+        given, or a chosen card doesn't match the required category.
+        """
+        pending = player.pending_glitch_discard
+        if pending is None:
+            raise ValueError(f"{player.name} has no pending glitch discard")
+        if len(set(card_indices)) != len(card_indices) or len(card_indices) != pending['count']:
+            raise ValueError(f"Must choose exactly {pending['count']} distinct card(s) to discard")
+
+        cards_to_discard = []
+        for i in card_indices:
+            card = player.hand.non_objective_cards[i]
+            if pending['target_category'] and card.category != pending['target_category']:
+                raise ValueError(f"{card.name} is not a {pending['target_category']} card")
+            cards_to_discard.append(card)
+
+        for card in cards_to_discard:
+            self.discard_card(player, card)
+
+        player.pending_glitch_discard = None
+        return self._resolve_glitches(player)
 
     def discard_card(self, player: Player, card) -> None:
         """

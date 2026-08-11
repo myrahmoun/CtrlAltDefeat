@@ -18,13 +18,30 @@ widget updates.
 
 import grpc
 from PySide6.QtCore import QThread, Signal
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QMessageBox
 
 from client.network_worker import GameStreamWorker, GameActionWorker
 from client.view_model import game_state_from_proto
 from client.widgets.board_widget import BoardWidget
 from client.widgets.hand_widget import HandWidget
 from client.widgets.controls_widget import ControlsWidget
+
+
+def _glitch_event_text(event) -> str:
+    """Build the popup body for one resolved pb.GlitchEvent."""
+    header = f"Glitch Card: {event.name}"
+    if event.description:
+        header += f"\n{event.description}"
+
+    if event.effect_type == "draw":
+        names = ", ".join(event.drawn_card_names) if event.drawn_card_names else "nothing (pile empty)"
+        return f"{header}\n\nYou drew {event.count} more card(s): {names}"
+    if event.effect_type == "skip_operation":
+        return f"{header}\n\nYou can't play an operation this turn."
+    if event.effect_type == "discard":
+        category_note = f" {event.target_category}" if event.target_category else ""
+        return f"{header}\n\nYou must discard{category_note} card(s) — choose which in your hand."
+    return header
 
 
 class MainWindow(QMainWindow):
@@ -41,6 +58,7 @@ class MainWindow(QMainWindow):
     _draw_requested = Signal()
     _skip_requested = Signal()
     _leave_requested = Signal()
+    _resolve_glitch_discard_requested = Signal(list)
 
     def __init__(self, server_address: str):
         super().__init__()
@@ -65,6 +83,12 @@ class MainWindow(QMainWindow):
 
         self._pending_player_name: str | None = None
 
+        # Tracks whether the hand widget is currently forced into the
+        # glitch-discard picker, so on_state_updated only calls set_mode on
+        # the transition edges (entering/leaving pending) rather than every
+        # broadcast, which would otherwise wipe an in-progress selection.
+        self._awaiting_glitch_discard = False
+
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -73,6 +97,13 @@ class MainWindow(QMainWindow):
 
         self._status_label = QLabel("Not connected.")
         layout.addWidget(self._status_label)
+
+        # Separate from _status_label (which on_state_updated rewrites on
+        # every broadcast, including the one that always follows a turn):
+        # without its own label, a turn's outcome message gets overwritten
+        # before the player can read it.
+        self._outcome_label = QLabel("")
+        layout.addWidget(self._outcome_label)
 
         self._board_widget = BoardWidget()
         layout.addWidget(self._board_widget)
@@ -94,6 +125,7 @@ class MainWindow(QMainWindow):
         self._controls_widget.skip_clicked.connect(self.request_skip)
         self._hand_widget.play_selection_ready.connect(self._on_play_selection_ready)
         self._hand_widget.discard_selection_ready.connect(self._on_discard_selection_ready)
+        self._hand_widget.glitch_discard_selection_ready.connect(self._on_glitch_discard_selection_ready)
 
     # --- Action worker: exists for the app's whole lifetime ---
 
@@ -113,10 +145,12 @@ class MainWindow(QMainWindow):
         self._draw_requested.connect(self._action_worker.request_draw)
         self._skip_requested.connect(self._action_worker.request_skip)
         self._leave_requested.connect(self._action_worker.request_leave)
+        self._resolve_glitch_discard_requested.connect(self._action_worker.request_resolve_glitch_discard)
 
         # Worker -> UI
         self._action_worker.state_updated.connect(self.on_state_updated)
         self._action_worker.turn_result.connect(self.on_turn_result)
+        self._action_worker.glitch_events.connect(self.on_glitch_events)
         self._action_worker.action_failed.connect(self.on_action_failed)
         self._action_worker.game_created.connect(self.on_game_created)
         self._action_worker.joined.connect(self.on_joined)
@@ -171,6 +205,9 @@ class MainWindow(QMainWindow):
     def request_leave(self) -> None:
         self._leave_requested.emit()
 
+    def request_resolve_glitch_discard(self, card_indices: list) -> None:
+        self._resolve_glitch_discard_requested.emit(card_indices)
+
     # --- TEMPORARY: stands in for the lobby screen (see widgets/lobby_widget.py) ---
 
     def auto_join(self, game_id: str, player_name: str) -> None:
@@ -212,6 +249,9 @@ class MainWindow(QMainWindow):
     def _on_discard_selection_ready(self, card_index: int) -> None:
         self.request_discard(card_index)
 
+    def _on_glitch_discard_selection_ready(self, card_indices: list) -> None:
+        self.request_resolve_glitch_discard(card_indices)
+
     # --- Reactive handlers ---
 
     def on_state_updated(self, state) -> None:
@@ -226,33 +266,64 @@ class MainWindow(QMainWindow):
 
         me = view.player(self.player_id) if self.player_id else None
         is_my_turn = me is not None and view.current_player_id == self.player_id
-        self._controls_widget.set_my_turn(is_my_turn)
+        pending = me.pending_glitch_discard if me is not None else None
+        skip_turn = me.lose_next_turn if me is not None else False
+        # A pending glitch discard, or a turn already flagged to be
+        # skipped, both block normal turn actions — pending may be left
+        # over from this player's own last turn even if it's not currently
+        # their turn; skip_turn matters specifically when it IS their turn,
+        # since otherwise Play is already disabled by is_my_turn.
+        self._controls_widget.set_my_turn(is_my_turn and pending is None and not skip_turn)
 
         if me is not None:
             self._hand_widget.update_from(me.hand)
-            turn_note = " — your turn!" if is_my_turn else ""
-            self._status_label.setText(f"{me.name} (pos {me.board_position}/19){turn_note}")
+            if pending is not None:
+                self._hand_widget.set_mode(
+                    "discard", count=pending["count"], category=pending["target_category"], is_glitch=True,
+                )
+                self._awaiting_glitch_discard = True
+            elif self._awaiting_glitch_discard:
+                self._hand_widget.set_mode("play")
+                self._awaiting_glitch_discard = False
+
+            if pending is not None:
+                note = " — resolve your Glitch Card discard"
+            elif is_my_turn and skip_turn:
+                note = " — this turn will be skipped"
+            elif is_my_turn:
+                note = " — your turn!"
+            else:
+                note = ""
+            self._status_label.setText(f"{me.name} (pos {me.board_position}/19){note}")
         else:
             self._status_label.setText(f"Game {view.game_id} — {view.status}")
 
     def on_turn_result(self, result) -> None:
+        if result.glitch_events:
+            self.on_glitch_events(list(result.glitch_events))
+
         if result.lose_turn:
-            self._status_label.setText(
+            self._outcome_label.setText(
                 f"Operation failed! Responsibility {result.responsibility} — you'll miss your next turn."
             )
         elif not result.success:
-            self._status_label.setText(
+            self._outcome_label.setText(
                 f"Operation failed. R:{result.responsibility} E:{result.effect} — no movement."
             )
         else:
             moved = result.spaces_moved + (1 if result.bonus else 0)
             bonus_note = " (+1 bonus, drew 2 cards)" if result.bonus else ""
-            self._status_label.setText(
+            self._outcome_label.setText(
                 f"Success! R:{result.responsibility} E:{result.effect} — moved {moved} space(s){bonus_note}."
             )
 
+    def on_glitch_events(self, events: list) -> None:
+        """Show one popup per resolved Glitch Card, in order."""
+        for event in events:
+            QMessageBox.information(self, "Glitch Card!", _glitch_event_text(event))
+
     def on_action_failed(self, message: str) -> None:
-        self._status_label.setText(f"Error: {message}")
+        self._outcome_label.setText(f"Error: {message}")
 
     def on_game_created(self, game_id: str) -> None:
         self.game_id = game_id
