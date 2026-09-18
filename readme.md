@@ -7,6 +7,20 @@ GUI implementation of the Ctrl Alt Defeat card game, played over a local network
 implementation still diverges from those rules — read that section before changing
 anything in `src/`.
 
+## Screens
+
+The lobby, where players gather before the game starts:
+
+![The lobby screen, showing a game ID to share and three players joined](assets/lobby.png)
+
+And a turn in progress — the board, the operation being assembled with its running
+scores, the hand, and the game log:
+
+![The game screen, showing the board, a complete operation scoring responsibility 5 and effectiveness 11, a six-card hand, and the game log](assets/game.png)
+
+These are rendered with Qt's Fusion style, so the window chrome differs a little from
+a native macOS or Windows build. Regenerate or replace them whenever the UI changes.
+
 ## Setup
 
 Requires Python 3.9 or newer (developed on 3.14).
@@ -60,6 +74,7 @@ root/
 ├── client/ PySide6 GUI client — networked player app
 ├── data/ card definitions (JSON), loaded at runtime
 ├── CardData/ source material — card scans, OCR text, and the authoritative CSVs
+├── assets/ readme screenshots
 └── tests/ pytest suite
 ```
 
