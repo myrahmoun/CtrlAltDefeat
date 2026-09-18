@@ -67,6 +67,10 @@ message TurnResult {
   // Glitch Cards resolved from the bonus draw (responsibility >= 4). See
   // GlitchEvent and Player.pending_discard.
   repeated GlitchEvent glitch_events = 8;
+  // Set when the operation succeeded but was too irresponsible to cross the
+  // finishing line, so the player was held one space short of the centre.
+  // See Game.MIN_RESPONSIBILITY_TO_FINISH.
+  bool blocked_from_finish = 9;
 }
 
 // One resolved Glitch Card: what it was and what happened when it was
