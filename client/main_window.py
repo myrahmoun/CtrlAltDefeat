@@ -4,27 +4,45 @@ main_window.py
 The visible application window and the only place code runs on the main
 thread's Qt event loop (aside from app.py's startup lines).
 
-Owns a GameActionWorker (created immediately, since it needs no game-specific
-info to exist) and, once a game is joined, a GameStreamWorker (created only
-after game_id/player_id are known). Each worker is moved to its own QThread
-here; MainWindow only ever talks to them via signals, never by calling their
-methods directly.
+Owns a GameActionWorker (created on the first connect, once the lobby has
+supplied a server address) and, once a game is joined, a GameStreamWorker
+(created only after game_id/player_id are known). Each worker is moved to
+its own QThread here; MainWindow only ever talks to them via signals, never
+by calling their methods directly.
 
-Holds the three widgets (board, hand, controls) and is the only place that
-translates their clicks into request_* calls, and the only place that
-translates incoming GameState/TurnResult protos (via view_model) back into
-widget updates.
+Holds a QStackedWidget with two pages — the lobby, and the game itself
+(board, hand, controls) — and swaps between them as the server's reported
+status changes. It is the only place that translates widget clicks into
+request_* calls, and the only place that translates incoming
+GameState/TurnResult protos (via view_model) back into widget updates.
 """
 
 import grpc
 from PySide6.QtCore import QThread, Signal
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel, QMessageBox
+from PySide6.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QLabel, QMessageBox, QStackedWidget,
+)
 
 from client.network_worker import GameStreamWorker, GameActionWorker
 from client.view_model import game_state_from_proto
 from client.widgets.board_widget import BoardWidget
 from client.widgets.hand_widget import HandWidget
 from client.widgets.controls_widget import ControlsWidget
+from client.widgets.lobby_widgets import LobbyWidget
+from client.widgets.operation_widget import OperationWidget
+from client.widgets.event_log_widget import EventLogWidget
+
+
+def _glitch_log_line(event) -> str:
+    """One-line summary of a resolved Glitch Card, for the game log."""
+    if event.effect_type == "draw":
+        return f"{event.name}: drew {event.count} extra card(s)."
+    if event.effect_type == "skip_operation":
+        return f"{event.name}: no operation this turn."
+    if event.effect_type == "discard":
+        category = f" {event.target_category}" if event.target_category else ""
+        return f"{event.name}: discard {event.count}{category} card(s)."
+    return f"{event.name}."
 
 
 def _glitch_event_text(event) -> str:
@@ -45,6 +63,9 @@ def _glitch_event_text(event) -> str:
 
 
 class MainWindow(QMainWindow):
+    LOBBY_PAGE = 0
+    GAME_PAGE = 1
+
     # --- UI -> action worker signals ---
     # Emitting these (never calling the worker's methods directly) is what
     # actually crosses onto the worker's thread safely — see the connect()
@@ -60,18 +81,19 @@ class MainWindow(QMainWindow):
     _leave_requested = Signal()
     _resolve_discard_requested = Signal(list)
 
-    def __init__(self, server_address: str):
+    def __init__(self):
         super().__init__()
-        self.server_address = server_address
-
-        # Shared gRPC channel — safe to use from multiple stubs/threads.
-        self._channel = grpc.insecure_channel(server_address)
+        # Filled in by _ensure_connected() once the player supplies a
+        # server address on the lobby screen — there is nothing to connect
+        # to before that, so no channel or worker exists yet.
+        self.server_address: str | None = None
+        self._channel = None
+        self._action_thread: QThread | None = None
+        self._action_worker: GameActionWorker | None = None
 
         # Local copies, kept in sync via the joined/game_created signals.
         self.game_id: str | None = None
         self.player_id: str | None = None
-
-        self._setup_action_worker()
 
         # Created later, once we've joined a game — see _start_watching().
         self._stream_thread: QThread | None = None
@@ -93,33 +115,21 @@ class MainWindow(QMainWindow):
         self._setup_ui()
 
     def _setup_ui(self) -> None:
-        central = QWidget()
-        layout = QVBoxLayout(central)
+        # Page 0 is the lobby, page 1 the game. on_state_updated swaps to
+        # the game page once the server reports status "playing".
+        self._stack = QStackedWidget()
+        self._lobby_widget = LobbyWidget()
+        self._stack.addWidget(self._lobby_widget)
+        self._stack.addWidget(self._build_game_page())
 
-        self._status_label = QLabel("Not connected.")
-        layout.addWidget(self._status_label)
-
-        # Separate from _status_label (which on_state_updated rewrites on
-        # every broadcast, including the one that always follows a turn):
-        # without its own label, a turn's outcome message gets overwritten
-        # before the player can read it.
-        self._outcome_label = QLabel("")
-        layout.addWidget(self._outcome_label)
-
-        self._board_widget = BoardWidget()
-        layout.addWidget(self._board_widget)
-
-        self._hand_widget = HandWidget()
-        layout.addWidget(self._hand_widget)
-
-        self._controls_widget = ControlsWidget()
-        layout.addWidget(self._controls_widget)
-
-        self.setCentralWidget(central)
+        self.setCentralWidget(self._stack)
         self.resize(800, 900)
         self.setMinimumSize(400, 400)
 
         # Widget -> MainWindow (never widget -> worker directly)
+        self._lobby_widget.create_clicked.connect(self._on_create_clicked)
+        self._lobby_widget.join_clicked.connect(self._on_join_clicked)
+        self._lobby_widget.start_clicked.connect(self.request_start_game)
         self._controls_widget.play_clicked.connect(self._on_play_clicked)
         self._controls_widget.draw_clicked.connect(self.request_draw)
         self._controls_widget.discard_clicked.connect(self._on_discard_clicked)
@@ -127,8 +137,65 @@ class MainWindow(QMainWindow):
         self._hand_widget.play_selection_ready.connect(self._on_play_selection_ready)
         self._hand_widget.discard_selection_ready.connect(self._on_discard_selection_ready)
         self._hand_widget.forced_discard_ready.connect(self._on_forced_discard_ready)
+        self._hand_widget.selection_changed.connect(self._on_selection_changed)
 
-    # --- Action worker: exists for the app's whole lifetime ---
+    def _build_game_page(self) -> QWidget:
+        """
+        Top to bottom: who you are, what just happened, the board, the
+        operation you're assembling, your hand, the turn actions, and the
+        log. Only the log is given stretch, so everything above keeps its
+        natural height and the leftover space goes somewhere useful
+        instead of pooling as gaps between widgets.
+        """
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setSpacing(8)
+
+        self._status_label = QLabel("Not connected.")
+        self._status_label.setStyleSheet("font-size: 14px; font-weight: 600;")
+        layout.addWidget(self._status_label)
+
+        # Separate from _status_label (which on_state_updated rewrites on
+        # every broadcast, including the one that always follows a turn):
+        # without its own label, a turn's outcome message gets overwritten
+        # before the player can read it.
+        self._outcome_label = QLabel("")
+        self._outcome_label.setWordWrap(True)
+        layout.addWidget(self._outcome_label)
+
+        self._board_widget = BoardWidget()
+        layout.addWidget(self._board_widget)
+
+        self._operation_widget = OperationWidget()
+        layout.addWidget(self._operation_widget)
+
+        self._hand_widget = HandWidget()
+        layout.addWidget(self._hand_widget)
+
+        self._controls_widget = ControlsWidget()
+        layout.addWidget(self._controls_widget)
+
+        self._event_log = EventLogWidget()
+        layout.addWidget(self._event_log, stretch=1)
+
+        return page
+
+    # --- Action worker: created on first connect, then lives for the app's lifetime ---
+
+    def _ensure_connected(self, server_address: str) -> None:
+        """
+        Build the shared channel and the action worker the first time the
+        player connects. Called from the lobby handlers rather than from
+        __init__, since the server address isn't known until they type it.
+        Connecting to a *different* address afterwards isn't supported —
+        restart the app for that.
+        """
+        if self._action_worker is not None:
+            return
+        self.server_address = server_address
+        # Shared gRPC channel — safe to use from multiple stubs/threads.
+        self._channel = grpc.insecure_channel(server_address)
+        self._setup_action_worker()
 
     def _setup_action_worker(self) -> None:
         self._action_thread = QThread()
@@ -209,29 +276,29 @@ class MainWindow(QMainWindow):
     def request_resolve_discard(self, card_indices: list) -> None:
         self._resolve_discard_requested.emit(card_indices)
 
-    # --- TEMPORARY: stands in for the lobby screen (see widgets/lobby_widget.py) ---
+    # --- Lobby handlers ---
 
-    def auto_join(self, game_id: str, player_name: str) -> None:
+    def _on_create_clicked(self, server_address: str, player_name: str) -> None:
         """
-        Create a new game if game_id is blank, otherwise join the given
-        game_id, using the same request_* signals a real lobby screen
-        would use. Once joined, on_joined() -> _start_watching() takes
-        over as normal.
+        Create a new game, then join it as its first player. game_created
+        (fired by the worker once CreateGame returns) is what actually
+        carries the new game_id — request_create_game only sends the
+        request, it has no result to read yet.
         """
+        self._ensure_connected(server_address)
         self._pending_player_name = player_name
-        if game_id:
-            self.game_id = game_id
-            self.request_join_game(game_id, player_name)
-        else:
-            # game_created (fired by the worker once CreateGame returns)
-            # is what actually carries the new game_id — request_create_game
-            # only sends the request, it has no result to read yet.
-            self._action_worker.game_created.connect(self._on_auto_create_game_created)
-            self.request_create_game()
+        self._action_worker.game_created.connect(self._on_created_then_join)
+        self.request_create_game()
 
-    def _on_auto_create_game_created(self, game_id: str) -> None:
-        self._action_worker.game_created.disconnect(self._on_auto_create_game_created)
+    def _on_created_then_join(self, game_id: str) -> None:
+        self._action_worker.game_created.disconnect(self._on_created_then_join)
         self.request_join_game(game_id, self._pending_player_name)
+
+    def _on_join_clicked(self, server_address: str, game_id: str, player_name: str) -> None:
+        self._ensure_connected(server_address)
+        self._pending_player_name = player_name
+        self.game_id = game_id
+        self.request_join_game(game_id, player_name)
 
     # --- Widget click bridges ---
     # ControlsWidget/HandWidget only know "something was clicked/selected" —
@@ -253,16 +320,26 @@ class MainWindow(QMainWindow):
     def _on_forced_discard_ready(self, card_indices: list) -> None:
         self.request_resolve_discard(card_indices)
 
+    def _on_selection_changed(self) -> None:
+        objective, by_category = self._hand_widget.current_selection()
+        self._operation_widget.update_from(objective, by_category)
+
     # --- Reactive handlers ---
 
     def on_state_updated(self, state) -> None:
         view = game_state_from_proto(state)
-        self._latest_state = view
+        previous, self._latest_state = self._latest_state, view
 
-        # TEMPORARY - REPLACE LATER WITH READY AND START BUTTONS
-        if view.status == "lobby" and len(view.players) >= 3:
-            self.request_start_game()
+        # While the game hasn't started there's nothing for the board or
+        # hand to show, so the lobby owns the screen and renders the
+        # player list from the same pushes the game page would get.
+        if view.status == "lobby":
+            self._stack.setCurrentIndex(self.LOBBY_PAGE)
+            self._lobby_widget.update_from(view)
+            return
+        self._stack.setCurrentIndex(self.GAME_PAGE)
 
+        self._log_changes(previous, view)
         self._board_widget.update_from(view)
 
         me = view.player(self.player_id) if self.player_id else None
@@ -302,6 +379,58 @@ class MainWindow(QMainWindow):
         else:
             self._status_label.setText(f"Game {view.game_id} — {view.status}")
 
+    def _log_changes(self, previous, view) -> None:
+        """
+        Turn the difference between two state snapshots into log lines.
+
+        The server only ever pushes whole states, so everything other
+        players do has to be inferred by comparing them — there is no event
+        stream to subscribe to. A player's own turn is described in more
+        detail by on_turn_result, which has the dice and scores.
+        """
+        # Lobby pushes also populate _latest_state, so the start of play is
+        # the status transition rather than the first state we ever see.
+        if previous is None or previous.status != "playing":
+            self._event_log.append("Game started.", emphasis=True)
+            self._announce_turn(view)
+            return
+
+        before = {p.id: p for p in previous.players}
+        for player in view.players:
+            was = before.pop(player.id, None)
+            if was is None:
+                self._event_log.append(f"{player.name} joined.")
+                continue
+            moved = player.board_position - was.board_position
+            if moved > 0:
+                self._event_log.append(
+                    f"{player.name} advanced {moved} "
+                    f"space{'s' if moved != 1 else ''} to {player.board_position}."
+                )
+            if player.lose_next_turn and not was.lose_next_turn:
+                self._event_log.append(f"{player.name} went offline and misses a turn.")
+
+        for departed in before.values():
+            self._event_log.append(f"{departed.name} left the game.")
+
+        if view.winner_id and not previous.winner_id:
+            winner = view.player(view.winner_id)
+            self._event_log.append(
+                f"{winner.name if winner else 'Someone'} reached the centre and wins!",
+                emphasis=True,
+            )
+            return
+
+        if view.current_player_id != previous.current_player_id:
+            self._announce_turn(view)
+
+    def _announce_turn(self, view) -> None:
+        current = view.player(view.current_player_id)
+        if current is None:
+            return
+        whose = "Your turn." if current.id == self.player_id else f"{current.name}'s turn."
+        self._event_log.append(whose)
+
     def on_turn_result(self, result) -> None:
         if result.glitch_events:
             self.on_glitch_events(list(result.glitch_events))
@@ -317,17 +446,32 @@ class MainWindow(QMainWindow):
         else:
             moved = result.spaces_moved + (1 if result.bonus else 0)
             bonus_note = " (+1 bonus, drew 2 cards)" if result.bonus else ""
-            self._outcome_label.setText(
-                f"Success! R:{result.responsibility} E:{result.effect} — moved {moved} space(s){bonus_note}."
+            # A successful but under-responsible operation is held one space
+            # short of the centre, so say why rather than letting the player
+            # wonder where the rest of their movement went.
+            held_note = (
+                " Held short of the centre — finishing needs responsibility 3 or more."
+                if result.blocked_from_finish else ""
             )
+            self._outcome_label.setText(
+                f"Success! R:{result.responsibility} E:{result.effect} — "
+                f"moved {moved} space(s){bonus_note}.{held_note}"
+            )
+        self._event_log.append(f"You: {self._outcome_label.text()}")
 
     def on_glitch_events(self, events: list) -> None:
         """Show one popup per resolved Glitch Card, in order."""
         for event in events:
+            self._event_log.append(f"Glitch — {_glitch_log_line(event)}")
             QMessageBox.information(self, "Glitch Card!", _glitch_event_text(event))
 
     def on_action_failed(self, message: str) -> None:
-        self._outcome_label.setText(f"Error: {message}")
+        # Before the game starts the game page isn't visible, so a failed
+        # create/join has to report itself on the lobby screen instead.
+        if self._stack.currentIndex() == self.LOBBY_PAGE:
+            self._lobby_widget.set_error(message)
+        else:
+            self._outcome_label.setText(f"Error: {message}")
 
     def on_game_created(self, game_id: str) -> None:
         self.game_id = game_id
@@ -344,6 +488,7 @@ class MainWindow(QMainWindow):
         if self._stream_thread is not None:
             self._stream_thread.quit()
             self._stream_thread.wait()
-        self._action_thread.quit()
-        self._action_thread.wait()
+        if self._action_thread is not None:
+            self._action_thread.quit()
+            self._action_thread.wait()
         super().closeEvent(event)
