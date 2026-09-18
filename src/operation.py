@@ -12,6 +12,16 @@ class InvalidOperationException(Exception):
     def __init__(self):
         super().__init__("Operation is invalid: incomplete or malformed.")
 
+class OperationFailedException(Exception):
+    """
+    The die roll failed the operation: it scores 0 for effectiveness and the
+    player's counter stays put (instructions.md, "Scoring" step 5). Raised
+    rather than returning 0, so callers can tell a die failure apart from an
+    operation that succeeded but happened to total 0 effectiveness.
+    """
+    def __init__(self):
+        super().__init__("Operation failed: the die roll did not carry it.")
+
 class Operation(object):
     def __init__(self, objective):
         self.objective = objective
@@ -19,8 +29,12 @@ class Operation(object):
         self.tech =None
         self.govern = None
         self.cyber = None
-        self.responsibility = 0
-        self.effect = 0
+        # instructions.md, "Scoring" steps 1 and 6: both totals count every
+        # card in the operation, the Objective Card included — so seed them
+        # from the objective instead of starting at zero. add_action() then
+        # accumulates the four Action Cards on top.
+        self.responsibility = objective.responsibility if objective else 0
+        self.effect = objective.effect if objective else 0
 
     def add_action(self, action):
         '''
@@ -95,14 +109,14 @@ class Operation(object):
             return_val = self.effect
         elif self.responsibility > 0:
             if die_roll < 3:
-                return_val = 0
+                raise OperationFailedException()
             else:
                 return_val = self.effect
         else:
             if die_roll == 6:
                 return_val = self.effect
             elif die_roll > 2:
-                return_val = 0
+                raise OperationFailedException()
             else:
                 raise LoseTurnException()
         return return_val
