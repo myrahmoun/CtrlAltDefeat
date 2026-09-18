@@ -13,7 +13,7 @@ from src.cardpile import CardPile, CardPileTypes
 from src.player import Player
 from src.cards import ActionCard, GlitchCard, ObjectiveCard, CardCategory, GlitchEffectType
 from src.die import Die
-from src.operation import Operation, LoseTurnException
+from src.operation import Operation, LoseTurnException, OperationFailedException
 
 
 # Game files
@@ -34,6 +34,10 @@ class Game():
     """
     _MAX_GLITCH_CHAIN = 50  # guards against a pathological all-glitch remaining deck
     MAX_HAND_SIZE = 6  # instructions.md, "Action Cards": max held at end of turn
+    FINISH_POSITION = 19  # the centre of the board; reaching it wins the game
+    # instructions.md, "Playing an operation" step 3: only a sufficiently
+    # responsible operation may carry a player over the finishing line.
+    MIN_RESPONSIBILITY_TO_FINISH = 3
 
     def __init__(self, game_id: str) -> None:
         """Create a new game in LOBBY status with empty piles and no players yet."""
@@ -184,7 +188,7 @@ class Game():
         result = self._execute_operation(player, objective, actions)
 
         # Detect win
-        if player.board_position >= 19:
+        if player.board_position >= self.FINISH_POSITION:
             self.end_game(player)
             return
 
@@ -230,19 +234,42 @@ class Game():
             'spaces_moved': 0,
             'bonus': False,
             'lose_turn': False,
+            'blocked_from_finish': False,
             'glitch_events': [],
         }
 
         try:
             spaces_to_move = operation.evaluate_op()
-            player.board_position = min(player.board_position + spaces_to_move, 19)
             result['success'] = True
-            result['spaces_moved'] = spaces_to_move
+
+            # An operation too irresponsible to finish on still advances the
+            # player, but stops them one space short of the centre rather
+            # than carrying them over the line.
+            ceiling = self.FINISH_POSITION
+            if operation.responsibility < self.MIN_RESPONSIBILITY_TO_FINISH:
+                ceiling = self.FINISH_POSITION - 1
+                result['blocked_from_finish'] = (
+                    player.board_position + spaces_to_move >= self.FINISH_POSITION
+                )
+
+            # Report the distance actually travelled, which is short of the
+            # operation's effect score whenever either ceiling clamps it.
+            previous_position = player.board_position
+            player.board_position = min(player.board_position + spaces_to_move, ceiling)
+            result['spaces_moved'] = player.board_position - previous_position
 
             if operation.responsibility >= 4:
-                player.board_position = min(player.board_position + 1, 19)
+                # A responsibility of 4 clears MIN_RESPONSIBILITY_TO_FINISH,
+                # so the bonus space can cross the line safely.
+                player.board_position = min(player.board_position + 1, self.FINISH_POSITION)
                 result['bonus'] = True
                 result['glitch_events'] = self.draw_and_resolve_glitches(player, 2)
+
+        except OperationFailedException:
+            # Scores 0 for effectiveness and the counter stays put; 'success'
+            # is left False so the client reports a failure rather than a
+            # zero-distance success.
+            pass
 
         except LoseTurnException:
             player.lose_next_turn = True
