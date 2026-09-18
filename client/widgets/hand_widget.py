@@ -18,10 +18,16 @@ request_resolve_discard calls — this widget never talks to the network
 layer.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel,
+)
 from PySide6.QtCore import Signal
 
 REQUIRED_CATEGORIES = {"Intelligence", "Technology", "Governance", "Cybersecurity"}
+
+# The hand caps at six cards, so three per row keeps every label readable
+# instead of squeezing six buttons into one row and truncating their names.
+CARDS_PER_ROW = 3
 
 _FORCED_DISCARD_PREFIX = {
     "glitch": "Glitch Card: you must discard",
@@ -33,6 +39,9 @@ class HandWidget(QWidget):
     play_selection_ready = Signal(int, list)           # objective_index, action_indices
     discard_selection_ready = Signal(int)               # card_index
     forced_discard_ready = Signal(list)                 # card_indices
+    # Emitted whenever the selection changes, so the operation panel can
+    # show the running scores. Carries nothing — read current_selection().
+    selection_changed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -50,7 +59,7 @@ class HandWidget(QWidget):
 
         self._objective_row = QHBoxLayout()
         outer.addLayout(self._objective_row)
-        self._action_row = QHBoxLayout()
+        self._action_row = QGridLayout()
         outer.addLayout(self._action_row)
 
         self._confirm_button = QPushButton("Confirm")
@@ -85,10 +94,19 @@ class HandWidget(QWidget):
     # --- Rendering ---
 
     def _clear_layout(self, layout) -> None:
+        """
+        Empty a layout of its widgets.
+
+        deleteLater() only schedules destruction for the next event-loop
+        pass, and a widget taken out of a layout is still a child of this
+        one — so without unparenting it first, the old buttons keep
+        painting at their previous geometry underneath the new ones.
+        """
         while layout.count():
             item = layout.takeAt(0)
             widget = item.widget()
             if widget:
+                widget.setParent(None)
                 widget.deleteLater()
 
     def _render(self) -> None:
@@ -119,9 +137,10 @@ class HandWidget(QWidget):
                     btn.setEnabled(False)
                 else:
                     btn.clicked.connect(lambda _checked, idx=i: self._select_discard(idx))
-            self._action_row.addWidget(btn)
+            self._action_row.addWidget(btn, i // CARDS_PER_ROW, i % CARDS_PER_ROW)
 
         self._update_status_and_confirm()
+        self.selection_changed.emit()
 
     def _card_label(self, card) -> str:
         if hasattr(card, "category"):  # ActionCardView
@@ -148,6 +167,33 @@ class HandWidget(QWidget):
         elif len(self._selected_action_indices) < self._discard_count:
             self._selected_action_indices.add(index)
         self._render()
+
+    def current_selection(self):
+        """
+        What is chosen right now, as (objective_view_or_None, {category: card_view}).
+        Resolved here rather than in MainWindow because this widget already
+        holds the HandView the indices refer to.
+        """
+        if self._hand is None or self._mode != "play":
+            return None, {}
+
+        objective = None
+        if self._selected_objective_index is not None:
+            try:
+                objective = self._hand.objective_cards[self._selected_objective_index]
+            except IndexError:
+                objective = None
+
+        by_category = {}
+        for index in self._selected_action_indices:
+            try:
+                card = self._hand.non_objective_cards[index]
+            except IndexError:
+                continue
+            category = getattr(card, "category", None)
+            if category is not None:
+                by_category[category] = card
+        return objective, by_category
 
     def _selected_categories_valid(self) -> bool:
         if len(self._selected_action_indices) != 4:
