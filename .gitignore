@@ -1,7 +1,5 @@
 /.venv
 .DS_Store
-conftest.py
-/tests
 /scripts
 */__pycache__
 /.pytest_cache
